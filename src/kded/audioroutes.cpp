@@ -184,8 +184,14 @@ void AudioRoutes::save(Route &r)
 QString AudioRoutes::snapshot() const
 {
     QJsonObject listens;
-    for (auto it = m_listen.cbegin(); it != m_listen.cend(); ++it)
-        listens.insert(listens.contains(it.value()->input) ? it.key() : it.value()->input, it.value()->state());
+    for (auto it = m_listen.cbegin(); it != m_listen.cend(); ++it) {
+        QString key = it.value()->input;
+        if (listens.contains(key))
+            key = it.key();
+        while (listens.contains(key))
+            key += u'#';
+        listens.insert(key, it.value()->state());
+    }
     return json({{u"listen"_s, listens}, {u"combined"_s, m_combined->state()}});
 }
 void AudioRoutes::setListen(const QString &input, const QString &output, bool enabled)
@@ -297,6 +303,21 @@ bool AudioRoutes::stop(Route &r)
                 for (auto *m : PulseAudioQt::Context::instance()->modules())
                     if (m->index() == *it && m->argument().contains(u"plasma.pa.owner="_s + m_owner))
                         remaining.prepend(*it);
+            }
+        }
+    }
+    if (!remaining.isEmpty()) {
+        QProcess query;
+        query.start(u"pactl"_s, {u"--format=json"_s, u"list"_s, u"modules"_s});
+        if (query.waitForFinished(2000) && query.exitCode() == 0) {
+            const auto document = QJsonDocument::fromJson(query.readAllStandardOutput());
+            if (document.isArray()) {
+                QSet<uint> existing;
+                for (const auto &value : document.array())
+                    existing.insert(value.toObject().value(u"index"_s).toInt());
+                remaining.removeIf([&](uint id) {
+                    return !existing.contains(id);
+                });
             }
         }
     }
@@ -510,12 +531,13 @@ void AudioRoutes::start(Route &r)
             rules.append(QJsonObject{{u"matches"_s, QJsonArray{QJsonObject{{u"object.serial"_s, serial(device)}}}},
                                      {u"actions"_s, QJsonObject{{u"create-stream"_s, props}}}});
         }
-        const QJsonObject args{{u"combine.mode"_s, u"source"_s},
-                               {u"node.name"_s, combinedName},
-                               {u"node.description"_s, i18nd("kcm_pulseaudio", "Combined Recording")},
-                               {u"combine.props"_s, QJsonObject{{u"audio.position"_s, QJsonArray{u"FL"_s, u"FR"_s}}, {u"node.virtual"_s, false}}},
-                               {u"stream.props"_s, QJsonObject{{u"node.virtual"_s, false}, {u"node.dont-fallback"_s, true}, {u"node.passive"_s, true}}},
-                               {u"stream.rules"_s, rules}};
+        const QJsonObject args{
+            {u"combine.mode"_s, u"source"_s},
+            {u"node.name"_s, combinedName},
+            {u"node.description"_s, i18nd("kcm_pulseaudio", "Combined Recording")},
+            {u"combine.props"_s, QJsonObject{{u"audio.position"_s, QJsonArray{u"FL"_s, u"FR"_s}}, {u"node.virtual"_s, false}, {u"priority.session"_s, 0}}},
+            {u"stream.props"_s, QJsonObject{{u"node.virtual"_s, false}, {u"node.dont-fallback"_s, true}, {u"node.passive"_s, true}}},
+            {u"stream.rules"_s, rules}};
         p->start(u"pw-cli"_s, {u"-m"_s, u"load-module"_s, u"libpipewire-module-combine-stream"_s, json(args)});
     } else {
         QJsonObject capture{{u"target.object"_s, sourceSerial},

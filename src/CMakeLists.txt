@@ -42,6 +42,7 @@ target_sources(plasma-volume-declarative PRIVATE
     qml/microphoneindicator.cpp qml/microphoneindicator.h
     qml/globalservice.cpp qml/globalservice.h
     qml/dbusinterface.cpp
+    qml/routingcontroller.cpp qml/routingcontroller.h
 )
 target_include_directories(plasma-volume-declarative PRIVATE qml/)
 

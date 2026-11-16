@@ -27,6 +27,10 @@ KCM.ScrollViewKCM {
         id: config
     }
 
+    RoutingController {
+        id: routing
+    }
+
     SinkModel {
         id: paSinkModel
     }
@@ -164,6 +168,7 @@ KCM.ScrollViewKCM {
                 model: inactiveDevicesSwitch.checked || !inactiveDevicesSwitch.visible ? paSinkModel : paSinkFilterModel
                 delegate: DeviceListItem {
                     isPlayback: true
+                    routingController: routing
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
                 }
             }
@@ -188,7 +193,40 @@ KCM.ScrollViewKCM {
                 model: inactiveDevicesSwitch.checked || !inactiveDevicesSwitch.visible ? paSourceModel : paSourceFilterModel
                 delegate: DeviceListItem {
                     isPlayback: false
+                    routingController: routing
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
+                }
+            }
+
+            Kirigami.ListSectionHeader {
+                Layout.fillWidth: true
+                text: i18nd("kcm_pulseaudio", "Combined Recording")
+            }
+
+            RouteControls {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.largeSpacing
+                Layout.rightMargin: Kirigami.Units.largeSpacing
+                controller: routing
+                combined: true
+            }
+
+            Repeater {
+                model: Object.values(routing.listens).filter(route => route.enabled && [1, 2].includes(route.reason))
+                Kirigami.InlineMessage {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.leftMargin: Kirigami.Units.largeSpacing
+                    Layout.rightMargin: Kirigami.Units.largeSpacing
+                    visible: true
+                    type: Kirigami.MessageType.Error
+                    text: routing.message(modelData)
+                    actions: [
+                        Kirigami.Action {
+                            text: i18nd("kcm_pulseaudio", "Stop Listening")
+                            onTriggered: routing.setListen(modelData.source, modelData.output, false)
+                        }
+                    ]
                 }
             }
 

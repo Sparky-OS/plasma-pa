@@ -7,6 +7,8 @@ kcoreaddons_add_plugin(audioshortcutsservice
     SOURCES
         audioshortcutsservice.cpp
         audioshortcutsservice.h
+        audioroutes.cpp
+        audioroutes.h
         mutedmicrophonereminder.cpp
         mutedmicrophonereminder.h
         KDBusPropertiesChangedAdaptor.cpp

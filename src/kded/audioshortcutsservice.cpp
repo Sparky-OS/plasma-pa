@@ -6,6 +6,7 @@
 #include "audioshortcutsservice.h"
 
 #include "audioicon.h"
+#include "audioroutes.h"
 
 #include <QAction>
 #include <QDBusConnection>
@@ -40,6 +41,7 @@ AudioShortcutsService::AudioShortcutsService(QObject *parent, const QList<QVaria
     , m_osdDBusInterface(new OsdServiceInterface(OSD_DBUS_SERVICE, OSD_DBUS_PATH, QDBusConnection::sessionBus(), this))
     , m_feedback(new VolumeFeedback(this))
 {
+    new AudioRoutes(this);
     connect(m_globalConfigWatcher.get(), &KConfigWatcher::configChanged, this, [this](const KConfigGroup &group, const QByteArrayList &names) {
         if (group.name() == "General"_ba && names.contains("MutedMicrophoneReminderOsd"_ba)) {
             if (m_globalConfig->mutedMicrophoneReminderOsd()) {

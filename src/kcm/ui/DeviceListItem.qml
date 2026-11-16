@@ -28,6 +28,7 @@ ColumnLayout {
 
     property alias portVisible: portBox.visible
     property bool comboBoxLabelsVisible: false
+    property var routingController
 
     RowLayout {
         spacing: Kirigami.Units.smallSpacing
@@ -271,6 +272,13 @@ ColumnLayout {
                 });
             }
         }
+    }
+
+    RouteControls {
+        visible: !delegate.isPlayback && routingController !== undefined
+        Layout.fillWidth: true
+        controller: delegate.routingController
+        sourceName: delegate.pulseObject.name
     }
 
     Kirigami.Separator {

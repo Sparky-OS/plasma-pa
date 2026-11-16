@@ -10,6 +10,9 @@
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
     <kcfgfile name="plasmaparc" />
     <group name="General">
+        <entry name="ShowVirtualStreams" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="VolumeStep" type="Int">
             <label>Percent step for changing volume.</label>
             <default>5</default>

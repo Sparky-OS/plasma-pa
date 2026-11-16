@@ -171,20 +171,20 @@ PlasmoidItem {
         sourceModel: paSourceModel
     }
 
-    // non-virtual streams going to output devices
+    // Streams going to output devices
     readonly property PulseObjectFilterModel paSinkInputFilterModel: PulseObjectFilterModel {
         id: paSinkInputFilterModel
+        filterVirtualStreams: !main.showVirtualDevices
         filters: [
-            { role: "VirtualStream", value: false },
-            { role: "Client", value: (client) => client.name !== "libcanberra" },
+            { role: "Client", value: (client) => !client || client.name !== "libcanberra" },
         ]
         sourceModel: paSinkInputModel
     }
 
-    // non-virtual streams coming from input devices
+    // Streams coming from input devices
     readonly property PulseObjectFilterModel paSourceOutputFilterModel: PulseObjectFilterModel {
         id: paSourceOutputFilterModel
-        filters: [ { role: "VirtualStream", value: false } ]
+        filterVirtualStreams: !main.showVirtualDevices
         sourceModel: paSourceOutputModel
     }
 
@@ -772,7 +772,7 @@ PlasmoidItem {
             }
         },
         PlasmaCore.Action {
-            text: i18n("Show virtual devices")
+            text: i18n("Show virtual devices and streams")
             icon.name: "audio-card"
             checkable: true
             checked: plasmoid.configuration.showVirtualDevices

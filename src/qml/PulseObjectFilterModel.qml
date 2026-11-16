@@ -6,10 +6,12 @@ KItemModels.KSortFilterProxyModel {
     property /*[{ role: string, value: var }]*/ var filters: []
     property bool filterOutInactiveDevices: false
     property bool filterVirtualDevices: false
+    property bool filterVirtualStreams: false
 
     onFiltersChanged: invalidate()
     onFilterOutInactiveDevicesChanged: invalidate()
     onFilterVirtualDevicesChanged: invalidate()
+    onFilterVirtualStreamsChanged: invalidate()
 
     filterRowCallback: function(source_row, source_parent) {
         const idx = sourceModel.index(source_row, 0, source_parent);
@@ -45,6 +47,10 @@ KItemModels.KSortFilterProxyModel {
         }
 
         if (filterVirtualDevices && sourceModel.data(idx, sourceModel.KItemModels.KRoleNames.role("PulseObject")).virtualDevice) {
+            return false;
+        }
+
+        if (filterVirtualStreams && sourceModel.data(idx, sourceModel.KItemModels.KRoleNames.role("VirtualStream"))) {
             return false;
         }
 

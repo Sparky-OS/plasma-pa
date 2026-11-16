@@ -66,6 +66,13 @@ KCM.ScrollViewKCM {
 
     actions: [
         Kirigami.Action {
+            text: i18nd("kcm_pulseaudio", "Show Virtual Streams")
+            icon.name: "audio-card"
+            checkable: true
+            checked: config.showVirtualStreams
+            onTriggered: { config.showVirtualStreams = !config.showVirtualStreams; config.save() }
+        },
+        Kirigami.Action {
             id: inactiveDevicesSwitch
             icon.name: "view-visible"
             visible: (paSourceModel.count != paSourceFilterModel.count) || (paSinkModel.count != paSinkFilterModel.count)
@@ -260,9 +267,9 @@ KCM.ScrollViewKCM {
                 interactive: false
                 spacing: Kirigami.Units.largeSpacing
                 model: PulseObjectFilterModel {
+                    filterVirtualStreams: !config.showVirtualStreams
                     filters: [
-                        { role: "VirtualStream", value: false },
-                        { role: "Client", value: (client) => client.name !== "libcanberra" },
+                        { role: "Client", value: (client) => !client || client.name !== "libcanberra" },
                     ]
                     sourceModel: SinkInputModel {}
                 }
@@ -290,12 +297,12 @@ KCM.ScrollViewKCM {
                 interactive: false
                 spacing: Kirigami.Units.largeSpacing
                 model: PulseObjectFilterModel {
-                    filters: [ { role: "VirtualStream", value: false } ]
+                    filterVirtualStreams: !config.showVirtualStreams
                     sourceModel: SourceOutputModel {}
                 }
 
                 delegate: StreamListItem {
-                    deviceModel: sourceModel
+                    deviceModel: paSourceModel
                     isPlayback: false
                 }
             }

@@ -460,31 +460,36 @@ QMenu *ListItemMenu::createMenu()
     auto *stream = qobject_cast<PulseAudioQt::Stream *>(m_pulseObject.data());
     if (stream && m_sourceModel && m_sourceModel->rowCount() > 1) {
         if (m_itemType == SinkInput || m_itemType == SourceOutput) {
-            if (m_itemType == SinkInput) {
-                menu->addSection(i18nc("Heading for a list of possible output devices (speakers, headphones, ...) to choose", "Play audio using"));
+            if (stream->properties().value(QStringLiteral("plasma.pa.route")).toString() == QStringLiteral("CombinedRecording")) {
+                menu->addAction(i18nd("kcm_pulseaudio", "Choose the microphone and output in Combined Recording."))->setEnabled(false);
             } else {
-                menu->addSection(i18nc("Heading for a list of possible input devices (built-in microphone, headset, ...) to choose", "Record audio using"));
-            }
+                if (m_itemType == SinkInput) {
+                    menu->addSection(i18nc("Heading for a list of possible output devices (speakers, headphones, ...) to choose", "Play audio using"));
+                } else {
+                    menu->addSection(i18nc("Heading for a list of possible input devices (built-in microphone, headset, ...) to choose", "Record audio using"));
+                }
 
-            const int indexRole = m_sourceModel->roleNames().key("Index", -1);
-            Q_ASSERT(indexRole != -1);
-            const int descriptionRole = m_sourceModel->roleNames().key("Description", -1);
-            Q_ASSERT(descriptionRole != -1);
+                const int indexRole = m_sourceModel->roleNames().key("Index", -1);
+                Q_ASSERT(indexRole != -1);
+                const int descriptionRole = m_sourceModel->roleNames().key("Description", -1);
+                Q_ASSERT(descriptionRole != -1);
 
-            auto *deviceGroup = new QActionGroup(menu);
+                auto *deviceGroup = new QActionGroup(menu);
 
-            for (int i = 0; i < m_sourceModel->rowCount(); ++i) {
-                const QModelIndex idx = m_sourceModel->index(i, 0);
-                const auto index = idx.data(indexRole).toUInt();
+                for (int i = 0; i < m_sourceModel->rowCount(); ++i) {
+                    const QModelIndex idx = m_sourceModel->index(i, 0);
+                    const auto index = idx.data(indexRole).toUInt();
 
-                auto *item = menu->addAction(idx.data(descriptionRole).toString());
-                item->setCheckable(true);
-                item->setChecked(index == stream->deviceIndex());
-                connect(item, &QAction::triggered, stream, [stream, index] {
-                    if (!GlobalService::routeStream(stream,index)) stream->setDeviceIndex(index);
-                });
+                    auto *item = menu->addAction(idx.data(descriptionRole).toString());
+                    item->setCheckable(true);
+                    item->setChecked(index == stream->deviceIndex());
+                    connect(item, &QAction::triggered, stream, [stream, index] {
+                        if (!GlobalService::routeStream(stream, index))
+                            stream->setDeviceIndex(index);
+                    });
 
-                deviceGroup->addAction(item);
+                    deviceGroup->addAction(item);
+                }
             }
         }
     }

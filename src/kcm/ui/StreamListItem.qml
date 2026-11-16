@@ -19,6 +19,7 @@ ColumnLayout {
     readonly property bool isEventStream: Name == "sink-input-by-media-role:event"
     property bool isPlayback
     property var pulseStream: model.PulseObject
+    readonly property bool isCombinedRoute: !!pulseStream && pulseStream.properties["plasma.pa.route"] === "CombinedRecording"
 
     width: parent ? parent.width : undefined
 
@@ -86,7 +87,14 @@ ColumnLayout {
                     id: deviceComboBox
                     streamObject: delegate.pulseStream
                     Layout.minimumWidth: Kirigami.Units.gridUnit * 12
-                    visible: !isEventStream && count > 1
+                    visible: !isEventStream && count > 1 && !delegate.isCombinedRoute
+                }
+
+                Label {
+                    visible: delegate.isCombinedRoute
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                    text: i18nd("kcm_pulseaudio", "Choose the microphone and output in Combined Recording.")
+                    wrapMode: Text.WordWrap
                 }
             }
 

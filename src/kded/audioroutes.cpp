@@ -489,8 +489,9 @@ void AudioRoutes::start(Route &r)
                                                       + m_owner + u" plasma.pa.route="_s + r.key),
                                u"format=float32le"_s,
                                u"rate="_s + rate});
-            r.commands.append(loopback(r.input, combinedName + u"_bus"_s, u"plasma-pa-combined-microphone"_s));
-            r.commands.append(loopback(r.output + u".monitor"_s, combinedName + u"_bus"_s, u"plasma-pa-combined-output"_s));
+            r.commands.append(loopback(r.input, combinedName + u"_bus"_s, i18nd("kcm_pulseaudio", "Combined Recording") + u": "_s + a->description()));
+            r.commands.append(
+                loopback(r.output + u".monitor"_s, combinedName + u"_bus"_s, i18nd("kcm_pulseaudio", "Combined Recording") + u": "_s + b->description()));
             r.commands.append({u"load-module"_s,
                                u"module-remap-source"_s,
                                u"master="_s + combinedName + u"_bus.monitor"_s,
@@ -499,7 +500,7 @@ void AudioRoutes::start(Route &r)
                                    + propertyArgument(u"device.description="_s + quoted(i18nd("kcm_pulseaudio", "Combined Recording")) + u" plasma.pa.owner="_s
                                                       + m_owner + u" plasma.pa.route="_s + r.key)});
         } else
-            r.commands.append(loopback(r.input, r.output, u"plasma-pa-"_s + r.key));
+            r.commands.append(loopback(r.input, r.output, i18nd("kcm_pulseaudio", "Listen: %1", a->description())));
         p->disconnect(this);
         delete p;
         r.process = nullptr;
@@ -536,7 +537,12 @@ void AudioRoutes::start(Route &r)
             {u"node.name"_s, combinedName},
             {u"node.description"_s, i18nd("kcm_pulseaudio", "Combined Recording")},
             {u"combine.props"_s, QJsonObject{{u"audio.position"_s, QJsonArray{u"FL"_s, u"FR"_s}}, {u"node.virtual"_s, false}, {u"priority.session"_s, 0}}},
-            {u"stream.props"_s, QJsonObject{{u"node.virtual"_s, false}, {u"node.dont-fallback"_s, true}, {u"node.passive"_s, true}}},
+            {u"stream.props"_s,
+             QJsonObject{{u"node.virtual"_s, false},
+                         {u"node.dont-fallback"_s, true},
+                         {u"node.passive"_s, true},
+                         {u"plasma.pa.owner"_s, m_owner},
+                         {u"plasma.pa.route"_s, r.key}}},
             {u"stream.rules"_s, rules}};
         p->start(u"pw-cli"_s, {u"-m"_s, u"load-module"_s, u"libpipewire-module-combine-stream"_s, json(args)});
     } else {

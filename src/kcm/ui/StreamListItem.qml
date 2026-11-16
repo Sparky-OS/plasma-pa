@@ -59,6 +59,8 @@ ColumnLayout {
                     text: {
                         if (isEventStream) {
                             return i18nd("kcm_pulseaudio", "Notification Sounds");
+                        } else if (Properties["plasma.pa.owner"] && Properties["application.description"]) {
+                            return Properties["application.description"];
                         } else if (Client) {
                             if (Client.name === "pipewire-media-session") {
                                 return Name;

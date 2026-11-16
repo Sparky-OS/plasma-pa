@@ -18,6 +18,9 @@ ListItemBase {
     Keys.onSpacePressed: toggleMuteItem()
     draggable: devicesModel && devicesModel.count > 1 && model.Properties["plasma.pa.route"] !== "CombinedRecording"
     label: {
+        if (model.Properties["plasma.pa.owner"] && model.Properties["application.description"]) {
+            return model.Properties["application.description"];
+        }
         let parts = []
         if (model.Client && model.Client.name && model.Client.name != "pipewire-media-session") {
             parts.push(model.Client.name);

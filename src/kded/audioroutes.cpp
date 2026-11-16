@@ -459,9 +459,11 @@ void AudioRoutes::start(Route &r)
                                u"source_dont_move=true"_s,
                                u"sink_dont_move=true"_s,
                                u"sink_input_properties="_s
-                                   + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key),
+                                   + propertyArgument(u"media.name="_s + quoted(label) + u" application.name="_s + quoted(label) + u" application.description="_s + quoted(label)
+                                                      + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key),
                                u"source_output_properties="_s
-                                   + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key)};
+                                   + propertyArgument(u"media.name="_s + quoted(label) + u" application.name="_s + quoted(label) + u" application.description="_s + quoted(label)
+                                                      + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key)};
         };
         if (r.mix) {
             QProcess query;
@@ -527,6 +529,8 @@ void AudioRoutes::start(Route &r)
             QJsonObject props{{u"stream.capture.sink"_s, isMonitor},
                               {u"node.name"_s, name + (device == a ? u".microphone"_s : u".output"_s)},
                               {u"media.name"_s, i18nd("kcm_pulseaudio", "Combined Recording") + u": "_s + device->description()},
+                              {u"application.name"_s, i18nd("kcm_pulseaudio", "Combined Recording") + u": "_s + device->description()},
+                              {u"application.description"_s, i18nd("kcm_pulseaudio", "Combined Recording") + u": "_s + device->description()},
                               {u"audio.position"_s, QJsonArray{u"FL"_s, u"FR"_s}},
                               {u"combine.audio.position"_s, QJsonArray{u"FL"_s, u"FR"_s}}};
             rules.append(QJsonObject{{u"matches"_s, QJsonArray{QJsonObject{{u"object.serial"_s, serial(device)}}}},
@@ -553,6 +557,8 @@ void AudioRoutes::start(Route &r)
                             {u"node.virtual"_s, false},
                             {u"node.dont-fallback"_s, true},
                             {u"node.name"_s, name + u".capture"_s},
+                            {u"application.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())},
+                            {u"application.description"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())},
                             {u"media.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())}};
         QJsonObject playback{{u"target.object"_s, sinkSerial},
                              {u"plasma.pa.owner"_s, m_owner},
@@ -560,7 +566,9 @@ void AudioRoutes::start(Route &r)
                              {u"node.virtual"_s, false},
                              {u"node.dont-fallback"_s, true},
                              {u"node.name"_s, name + u".playback"_s},
-                             {u"media.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())}};
+                             {u"application.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())},
+                            {u"application.description"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())},
+                            {u"media.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())}};
         const QMap<QString, QString> positions{{u"front-left"_s, u"FL"_s},
                                                {u"front-right"_s, u"FR"_s},
                                                {u"front-center"_s, u"FC"_s},

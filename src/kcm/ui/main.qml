@@ -212,7 +212,7 @@ KCM.ScrollViewKCM {
             }
 
             Repeater {
-                model: Object.values(routing.listens).filter(route => route.enabled && [1, 2].includes(route.reason))
+                model: Object.values(routing.listens).filter(route => route.reason > 0 && !routing.inputs.some(input => input.name === route.source))
                 Kirigami.InlineMessage {
                     required property var modelData
                     Layout.fillWidth: true
@@ -224,7 +224,7 @@ KCM.ScrollViewKCM {
                     actions: [
                         Kirigami.Action {
                             text: i18nd("kcm_pulseaudio", "Stop Listening")
-                            onTriggered: routing.setListen(modelData.source, modelData.output, false)
+                            onTriggered: routing.setListenRoute(modelData.id, modelData.source, modelData.output, false)
                         }
                     ]
                 }

@@ -377,7 +377,7 @@ PC3.ItemDelegate {
         anchors.fill: parent
         enabled: main.draggedStream && main.draggedStream.deviceIndex !== item.model.Index
         onDropped: drop => {
-            main.draggedStream.deviceIndex = item.model.Index;
+            if (!GlobalService.routeStream(main.draggedStream, item.model.Index)) main.draggedStream.deviceIndex = item.model.Index;
         }
     }
 

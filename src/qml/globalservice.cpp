@@ -6,6 +6,8 @@
 
 #include "globalservice.h"
 
+#include <PulseAudioQt/SinkInput>
+#include <PulseAudioQt/Stream>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QString>
@@ -14,6 +16,21 @@ using namespace Qt::Literals::StringLiterals;
 
 constexpr QLatin1String OSD_DBUS_SERVICE = "org.kde.plasmashell"_L1;
 constexpr QLatin1String OSD_DBUS_PATH = "/org/kde/osdService"_L1;
+
+bool GlobalService::routeStream(QObject *object, quint32 deviceIndex)
+{
+    auto *stream = qobject_cast<PulseAudioQt::Stream *>(object);
+    if (!stream || !stream->properties().contains(u"plasma.pa.owner"_s))
+        return false;
+    const QString id = stream->properties().value(u"plasma.pa.route"_s).toString();
+    if (!id.startsWith(u"Listen-"_s))
+        return false;
+    ensureKDEDModule();
+    auto request = QDBusMessage::createMethodCall(u"org.kde.kded6"_s, u"/org/kde/plasma/AudioRoutes"_s, u"org.kde.plasma.AudioRoutes"_s, u"moveListen"_s);
+    request.setArguments({id, qobject_cast<PulseAudioQt::SinkInput *>(object) != nullptr, deviceIndex});
+    QDBusConnection::sessionBus().call(request, QDBus::NoBlock);
+    return true;
+}
 
 void GlobalService::globalMuteSinks()
 {

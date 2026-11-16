@@ -4,7 +4,6 @@
 */
 #include "audioroutes.h"
 
-#include <QCryptographicHash>
 #include <QDBusConnection>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -13,7 +12,6 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSet>
-#include <QStandardPaths>
 #include <QUuid>
 #include <functional>
 #ifdef Q_OS_LINUX
@@ -48,7 +46,7 @@ QString quoted(const QString &s)
 QString propertyArgument(QString value)
 {
     value.replace(u'\'', u"\\'"_s);
-    return u'\''+value+u'\'';
+    return u'\'' + value + u'\'';
 }
 PulseAudioQt::Source *source(const QString &name)
 {
@@ -72,8 +70,8 @@ QString serial(PulseAudioQt::Device *d)
 {
     const auto value = d->pulseProperties().value(u"object.serial"_s).toString();
     bool ok;
-    value.toULongLong(&ok);
-    return ok ? value : QString();
+    const auto number = value.toULongLong(&ok);
+    return ok ? QString::number(number) : QString();
 }
 bool monitor(PulseAudioQt::Device *d)
 {
@@ -99,7 +97,8 @@ struct AudioRoutes::Route : QObject {
     bool running = false, stopping = false, native = false;
     QJsonObject state() const
     {
-        return {{u"source"_s, input},
+        return {{u"id"_s, key},
+                {u"source"_s, input},
                 {u"output"_s, output},
                 {u"enabled"_s, enabled},
                 {u"running"_s, running},
@@ -139,7 +138,7 @@ AudioRoutes::AudioRoutes(QObject *parent)
         auto r = std::make_shared<Route>();
         r->key = name;
         load(*r);
-        m_listen.insert(r->input, r);
+        m_listen.insert(r->key, r);
     }
     auto *c = PulseAudioQt::Context::instance();
     connect(c, &PulseAudioQt::Context::stateChanged, this, [this, c] {
@@ -186,22 +185,33 @@ QString AudioRoutes::snapshot() const
 {
     QJsonObject listens;
     for (auto it = m_listen.cbegin(); it != m_listen.cend(); ++it)
-        listens.insert(it.key(), it.value()->state());
+        listens.insert(listens.contains(it.value()->input) ? it.key() : it.value()->input, it.value()->state());
     return json({{u"listen"_s, listens}, {u"combined"_s, m_combined->state()}});
 }
 void AudioRoutes::setListen(const QString &input, const QString &output, bool enabled)
 {
-    auto &r = m_listen[input];
+    QString key;
+    for (const auto &r : m_listen)
+        if (r->input == input) {
+            key = r->key;
+            break;
+        }
+    setListenRoute(key, input, output, enabled);
+}
+void AudioRoutes::setListenRoute(const QString &id, const QString &input, const QString &output, bool enabled)
+{
+    const QString key = m_listen.contains(id) ? id : u"Listen-"_s + QUuid::createUuid().toString(QUuid::WithoutBraces);
+    auto &r = m_listen[key];
     if (!r) {
         r = std::make_shared<Route>();
-        r->key = u"Listen-"_s + QString::fromLatin1(QCryptographicHash::hash(input.toUtf8(), QCryptographicHash::Sha256).toHex().left(24));
+        r->key = key;
     }
-    stop(*r);
+    const bool stopped = stop(*r);
     r->input = input;
     r->output = output;
     r->enabled = enabled;
-    r->blocked = false;
-    r->reason = 0;
+    r->blocked = !stopped;
+    r->reason = stopped ? 0 : 10;
     if (auto *d = source(input))
         r->inputLabel = d->description();
     else
@@ -211,17 +221,38 @@ void AudioRoutes::setListen(const QString &input, const QString &output, bool en
     else
         r->outputLabel = output;
     save(*r);
-    reconcile();
+    if (stopped)
+        reconcile();
+    Q_EMIT changed();
+}
+void AudioRoutes::moveListen(const QString &id, bool playback, uint deviceIndex)
+{
+    const auto r = m_listen.value(id);
+    if (!r)
+        return;
+    if (playback) {
+        for (auto *d : PulseAudioQt::Context::instance()->sinks())
+            if (d->index() == deviceIndex) {
+                setListenRoute(id, r->input, d->name(), r->enabled);
+                return;
+            }
+    } else {
+        for (auto *d : PulseAudioQt::Context::instance()->sources())
+            if (d->index() == deviceIndex) {
+                setListenRoute(id, d->name(), r->output, r->enabled);
+                return;
+            }
+    }
 }
 void AudioRoutes::setCombined(const QString &input, const QString &output, bool enabled)
 {
     auto &r = *m_combined;
-    stop(r);
+    const bool stopped = stop(r);
     r.input = input;
     r.output = output;
     r.enabled = enabled;
-    r.blocked = false;
-    r.reason = 0;
+    r.blocked = !stopped;
+    r.reason = stopped ? 0 : 10;
     if (auto *d = source(input))
         r.inputLabel = d->description();
     else
@@ -231,9 +262,11 @@ void AudioRoutes::setCombined(const QString &input, const QString &output, bool 
     else
         r.outputLabel = output;
     save(r);
-    reconcile();
+    if (stopped)
+        reconcile();
+    Q_EMIT changed();
 }
-void AudioRoutes::stop(Route &r)
+bool AudioRoutes::stop(Route &r)
 {
     r.stopping = true;
     r.startup.stop();
@@ -255,25 +288,35 @@ void AudioRoutes::stop(Route &r)
         delete p;
     }
     r.commands.clear();
+    QList<uint> remaining;
     if (PulseAudioQt::Context::instance()->state() == PulseAudioQt::Context::State::Ready) {
         for (auto it = r.modules.crbegin(); it != r.modules.crend(); ++it) {
             QProcess p;
             p.start(u"pactl"_s, {u"unload-module"_s, QString::number(*it)});
-            p.waitForFinished(2000);
+            if (!p.waitForFinished(2000) || p.exitCode() != 0) {
+                for (auto *m : PulseAudioQt::Context::instance()->modules())
+                    if (m->index() == *it && m->argument().contains(u"plasma.pa.owner="_s + m_owner))
+                        remaining.prepend(*it);
+            }
         }
     }
-    r.modules.clear();
+    r.modules = remaining;
     r.stopping = false;
+    if (!remaining.isEmpty()) {
+        r.reason = 10;
+        r.blocked = true;
+        return false;
+    }
+    return true;
 }
 void AudioRoutes::failed(Route &r, int reason, const QString &detail)
 {
-    stop(r);
-    r.reason = reason;
+    r.reason = stop(r) ? reason : 10;
     r.detail = detail;
     r.blocked = true;
     Q_EMIT changed();
 }
-bool AudioRoutes::wouldLoop() const
+bool AudioRoutes::wouldLoop(const Route &route) const
 {
     QMap<QString, QStringList> edges;
     for (const auto &r : m_listen) {
@@ -292,24 +335,24 @@ bool AudioRoutes::wouldLoop() const
         if (b)
             edges[identity(b)].append(combinedName);
     }
-    QSet<QString> done, active;
-    std::function<bool(const QString &)> visit = [&](const QString &n) {
-        if (active.contains(n))
-            return true;
-        if (done.contains(n))
-            return false;
-        active.insert(n);
-        for (const auto &child : edges.value(n))
-            if (visit(child))
+    const auto reaches = [&](const QString &from, const QString &target) {
+        QSet<QString> visited;
+        std::function<bool(const QString &)> visit = [&](const QString &n) {
+            if (n == target)
                 return true;
-        active.remove(n);
-        done.insert(n);
-        return false;
+            if (visited.contains(n))
+                return false;
+            visited.insert(n);
+            for (const auto &child : edges.value(n))
+                if (visit(child))
+                    return true;
+            return false;
+        };
+        return visit(from);
     };
-    for (const auto &n : edges.keys())
-        if (visit(n))
-            return true;
-    return false;
+    auto *a = source(route.input);
+    auto *b = sink(route.output);
+    return route.mix ? ((a && reaches(combinedName, identity(a))) || (b && reaches(combinedName, identity(b)))) : (a && b && reaches(identity(b), identity(a)));
 }
 void AudioRoutes::reconcile()
 {
@@ -317,7 +360,6 @@ void AudioRoutes::reconcile()
     auto routes = m_listen.values();
     routes.append(m_combined);
     cleanOrphans();
-    const bool loop = wouldLoop();
     for (const auto &ptr : routes) {
         auto &r = *ptr;
         int reason = 0;
@@ -325,13 +367,17 @@ void AudioRoutes::reconcile()
         auto *a = source(r.input);
         auto *b = sink(r.output);
         if (!r.enabled) {
-            stop(r);
-            r.reason = 0;
+            if (r.reason != 10)
+                stop(r);
+            if (r.modules.isEmpty())
+                r.reason = 0;
             continue;
         }
+        if (r.reason == 10 && r.blocked)
+            continue;
         if (PulseAudioQt::Context::instance()->state() != PulseAudioQt::Context::State::Ready)
             reason = 1;
-        else if ((r.mix && (r.input == combinedName || r.input.startsWith(combinedName + u"."_s))) || r.output.startsWith(combinedName) || loop)
+        else if ((r.mix && (r.input == combinedName || r.input.startsWith(combinedName + u"."_s))) || r.output.startsWith(combinedName) || wouldLoop(r))
             reason = 8;
         else if (!a) {
             reason = 2;
@@ -341,15 +387,16 @@ void AudioRoutes::reconcile()
             detail = r.outputLabel;
         }
         if (reason) {
-            stop(r);
-            r.reason = reason;
+            const bool stopped = stop(r);
+            r.reason = stopped ? reason : 10;
             r.detail = detail;
-            r.blocked = false;
+            r.blocked = !stopped;
             continue;
         }
         const auto id = QString::number(a->index()) + u":"_s + QString::number(b->index());
         if (!r.identity.isEmpty() && r.identity != id) {
-            stop(r);
+            if (!stop(r))
+                continue;
             r.blocked = false;
         }
         if (!r.process && r.modules.isEmpty() && !r.blocked) {
@@ -390,8 +437,10 @@ void AudioRoutes::start(Route &r)
                                u"sink="_s + quoted(dst),
                                u"source_dont_move=true"_s,
                                u"sink_dont_move=true"_s,
-                               u"sink_input_properties="_s + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner),
-                               u"source_output_properties="_s + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner)};
+                               u"sink_input_properties="_s
+                                   + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key),
+                               u"source_output_properties="_s
+                                   + propertyArgument(u"media.name="_s + quoted(label) + u" plasma.pa.owner="_s + m_owner + u" plasma.pa.route="_s + r.key)};
         };
         if (r.mix) {
             QProcess query;
@@ -411,23 +460,23 @@ void AudioRoutes::start(Route &r)
                 failed(r, 9);
                 return;
             }
-            r.commands.append(
-                {u"load-module"_s,
-                 u"module-null-sink"_s,
-                 u"sink_name="_s + combinedName + u"_bus"_s,
-                 u"sink_properties="_s
-                                   + propertyArgument(u"device.description="_s + quoted(i18nd("kcm_pulseaudio", "Combined Recording")) + u" plasma.pa.owner="_s + m_owner),
-                 u"format=float32le"_s,
-                 u"rate="_s + rate});
+            r.commands.append({u"load-module"_s,
+                               u"module-null-sink"_s,
+                               u"sink_name="_s + combinedName + u"_bus"_s,
+                               u"sink_properties="_s
+                                   + propertyArgument(u"device.description="_s + quoted(i18nd("kcm_pulseaudio", "Combined Recording")) + u" plasma.pa.owner="_s
+                                                      + m_owner + u" plasma.pa.route="_s + r.key),
+                               u"format=float32le"_s,
+                               u"rate="_s + rate});
             r.commands.append(loopback(r.input, combinedName + u"_bus"_s, u"plasma-pa-combined-microphone"_s));
             r.commands.append(loopback(r.output + u".monitor"_s, combinedName + u"_bus"_s, u"plasma-pa-combined-output"_s));
-            r.commands.append(
-                {u"load-module"_s,
-                 u"module-remap-source"_s,
-                 u"master="_s + combinedName + u"_bus.monitor"_s,
-                 u"source_name="_s + combinedName,
-                 u"source_properties="_s
-                                   + propertyArgument(u"device.description="_s + quoted(i18nd("kcm_pulseaudio", "Combined Recording")) + u" plasma.pa.owner="_s + m_owner)});
+            r.commands.append({u"load-module"_s,
+                               u"module-remap-source"_s,
+                               u"master="_s + combinedName + u"_bus.monitor"_s,
+                               u"source_name="_s + combinedName,
+                               u"source_properties="_s
+                                   + propertyArgument(u"device.description="_s + quoted(i18nd("kcm_pulseaudio", "Combined Recording")) + u" plasma.pa.owner="_s
+                                                      + m_owner + u" plasma.pa.route="_s + r.key)});
         } else
             r.commands.append(loopback(r.input, r.output, u"plasma-pa-"_s + r.key));
         p->disconnect(this);
@@ -470,12 +519,16 @@ void AudioRoutes::start(Route &r)
         p->start(u"pw-cli"_s, {u"-m"_s, u"load-module"_s, u"libpipewire-module-combine-stream"_s, json(args)});
     } else {
         QJsonObject capture{{u"target.object"_s, sourceSerial},
+                            {u"plasma.pa.owner"_s, m_owner},
+                            {u"plasma.pa.route"_s, r.key},
                             {u"stream.capture.sink"_s, monitor(a)},
                             {u"node.virtual"_s, false},
                             {u"node.dont-fallback"_s, true},
                             {u"node.name"_s, name + u".capture"_s},
                             {u"media.name"_s, i18nd("kcm_pulseaudio", "Listen: %1", a->description())}};
         QJsonObject playback{{u"target.object"_s, sinkSerial},
+                             {u"plasma.pa.owner"_s, m_owner},
+                             {u"plasma.pa.route"_s, r.key},
                              {u"node.virtual"_s, false},
                              {u"node.dont-fallback"_s, true},
                              {u"node.name"_s, name + u".playback"_s},
@@ -556,8 +609,9 @@ void AudioRoutes::nativeStep(Route &r)
         bool ok;
         const auto id = QString::fromUtf8(p->readAllStandardOutput()).trimmed().toUInt(&ok);
         if (!ok || code != 0 || status != QProcess::NormalExit) {
-            QTimer::singleShot(0, this, [this, &r] {
-                failed(r, 9);
+            QTimer::singleShot(0, this, [this, &r, guard = QPointer<QProcess>(p)] {
+                if (guard && r.process == guard)
+                    failed(r, 9);
             });
             return;
         }

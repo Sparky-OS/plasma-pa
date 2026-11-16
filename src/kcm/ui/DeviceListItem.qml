@@ -274,11 +274,19 @@ ColumnLayout {
         }
     }
 
-    RouteControls {
-        visible: !delegate.isPlayback && routingController !== undefined
-        Layout.fillWidth: true
-        controller: delegate.routingController
-        sourceName: delegate.pulseObject.name
+    Repeater {
+        model: {
+            if (delegate.isPlayback || !delegate.routingController) return [];
+            const routes = Object.values(delegate.routingController.listens).filter(route => route.source === delegate.pulseObject.name);
+            return routes.length > 0 ? routes : [{}];
+        }
+        RouteControls {
+            required property var modelData
+            Layout.fillWidth: true
+            controller: delegate.routingController
+            sourceName: delegate.pulseObject.name
+            routeState: modelData
+        }
     }
 
     Kirigami.Separator {

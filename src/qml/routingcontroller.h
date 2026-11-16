@@ -24,6 +24,7 @@ public:
     QVariantList inputs() const;
     QVariantList outputs() const;
     Q_INVOKABLE void setListen(const QString &source, const QString &output, bool enabled);
+    Q_INVOKABLE void setListenRoute(const QString &id, const QString &source, const QString &output, bool enabled);
     Q_INVOKABLE void setCombined(const QString &source, const QString &output, bool enabled);
     Q_INVOKABLE QString message(const QVariantMap &state) const;
 Q_SIGNALS:
@@ -32,8 +33,9 @@ private Q_SLOTS:
     void refresh();
 
 private:
-    void configure(const QString &method, const QString &source, const QString &output, bool enabled);
+    void configure(const QString &method, const QString &source, const QString &output, bool enabled, const QString &id = {});
     QVariantMap m_snapshot;
+    QVariantList m_inputs, m_outputs;
     QString m_error;
     QTimer m_timer;
     bool m_pending = false;

@@ -19,6 +19,8 @@ public:
     ~AudioRoutes() override;
     Q_SCRIPTABLE QString snapshot() const;
     Q_SCRIPTABLE void setListen(const QString &source, const QString &output, bool enabled);
+    Q_SCRIPTABLE void setListenRoute(const QString &id, const QString &source, const QString &output, bool enabled);
+    Q_SCRIPTABLE void moveListen(const QString &id, bool playback, uint deviceIndex);
     Q_SCRIPTABLE void setCombined(const QString &source, const QString &output, bool enabled);
 Q_SIGNALS:
     Q_SCRIPTABLE void changed();
@@ -29,10 +31,10 @@ private:
     void reconcile();
     void save(Route &route);
     void start(Route &route);
-    void stop(Route &route);
+    bool stop(Route &route);
     void nativeStep(Route &route);
     void failed(Route &route, int reason, const QString &detail = {});
-    bool wouldLoop() const;
+    bool wouldLoop(const Route &route) const;
     void cleanOrphans();
     QString m_owner;
     KSharedConfig::Ptr m_config;

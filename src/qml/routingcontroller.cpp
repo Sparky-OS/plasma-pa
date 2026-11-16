@@ -61,6 +61,16 @@ QString RoutingController::serviceError() const
 }
 QVariantList RoutingController::inputs() const
 {
+    return m_inputs;
+}
+QVariantList RoutingController::outputs() const
+{
+    return m_outputs;
+}
+namespace
+{
+QVariantList inputDevices()
+{
     QVariantList result;
     for (auto *s : PulseAudioQt::Context::instance()->sources()) {
         if (!s->name().startsWith(u"plasma_pa_combined"_s)) {
@@ -69,7 +79,7 @@ QVariantList RoutingController::inputs() const
     }
     return result;
 }
-QVariantList RoutingController::outputs() const
+QVariantList outputDevices()
 {
     QVariantList result;
     for (auto *s : PulseAudioQt::Context::instance()->sinks()) {
@@ -78,6 +88,7 @@ QVariantList RoutingController::outputs() const
         }
     }
     return result;
+}
 }
 
 void RoutingController::refresh()
@@ -91,20 +102,26 @@ void RoutingController::refresh()
         const QDBusPendingReply<QString> reply = *watcher;
         watcher->deleteLater();
         m_pending = false;
+        const auto oldSnapshot = m_snapshot;
+        const auto oldError = m_error;
+        const auto oldInputs = m_inputs, oldOutputs = m_outputs;
+        m_inputs = inputDevices();
+        m_outputs = outputDevices();
         if (reply.isError()) {
             m_error = unavailable();
         } else {
             m_error.clear();
             m_snapshot = QJsonDocument::fromJson(reply.value().toUtf8()).toVariant().toMap();
         }
-        Q_EMIT changed();
+        if (m_snapshot != oldSnapshot || m_error != oldError || m_inputs != oldInputs || m_outputs != oldOutputs)
+            Q_EMIT changed();
     });
 }
 
-void RoutingController::configure(const QString &method, const QString &source, const QString &output, bool enabled)
+void RoutingController::configure(const QString &method, const QString &source, const QString &output, bool enabled, const QString &id)
 {
     auto request = call(method);
-    request.setArguments({source, output, enabled});
+    request.setArguments(method == u"setListenRoute"_s ? QVariantList{id, source, output, enabled} : QVariantList{source, output, enabled});
     auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(request), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher] {
         const QDBusPendingReply<> reply = *watcher;
@@ -121,6 +138,10 @@ void RoutingController::setListen(const QString &source, const QString &output, 
 {
     configure(u"setListen"_s, source, output, enabled);
 }
+void RoutingController::setListenRoute(const QString &id, const QString &source, const QString &output, bool enabled)
+{
+    configure(u"setListenRoute"_s, source, output, enabled, id);
+}
 void RoutingController::setCombined(const QString &source, const QString &output, bool enabled)
 {
     configure(u"setCombined"_s, source, output, enabled);
@@ -128,7 +149,7 @@ void RoutingController::setCombined(const QString &source, const QString &output
 
 QString RoutingController::message(const QVariantMap &state) const
 {
-    if (!state.value(u"enabled"_s).toBool()) {
+    if (!state.value(u"enabled"_s).toBool() && state.value(u"reason"_s).toInt() == 0) {
         return {};
     }
     const QString detail = state.value(u"detail"_s).toString();
@@ -164,6 +185,8 @@ QString RoutingController::message(const QVariantMap &state) const
         return i18nd("kcm_pulseaudio",
                      "PulseAudio could not create this route. "
                      "Check the selected devices and try again.");
+    case 10:
+        return i18nd("kcm_pulseaudio", "Could not stop this route. Restore the audio backend tools and try again.");
     default:
         return state.value(u"running"_s).toBool() ? i18nd("kcm_pulseaudio", "Active") : i18nd("kcm_pulseaudio", "Starting…");
     }

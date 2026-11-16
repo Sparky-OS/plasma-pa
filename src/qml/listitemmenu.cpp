@@ -24,6 +24,7 @@
 #include <PulseAudioQt/Stream>
 
 #include "debug.h"
+#include "globalservice.h"
 
 using namespace PulseAudioQt;
 
@@ -480,7 +481,7 @@ QMenu *ListItemMenu::createMenu()
                 item->setCheckable(true);
                 item->setChecked(index == stream->deviceIndex());
                 connect(item, &QAction::triggered, stream, [stream, index] {
-                    stream->setDeviceIndex(index);
+                    if (!GlobalService::routeStream(stream,index)) stream->setDeviceIndex(index);
                 });
 
                 deviceGroup->addAction(item);

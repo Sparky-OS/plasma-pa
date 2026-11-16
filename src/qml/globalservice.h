@@ -15,6 +15,7 @@ class GlobalService : public QObject
     Q_OBJECT
 
 public Q_SLOTS:
+    static bool routeStream(QObject *stream, quint32 deviceIndex);
     static void globalMuteSinks();
     static void globalMuteSources();
     static void volumeUp();

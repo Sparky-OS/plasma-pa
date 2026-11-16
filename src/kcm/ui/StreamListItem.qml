@@ -18,6 +18,7 @@ ColumnLayout {
     property alias deviceModel: deviceComboBox.model
     readonly property bool isEventStream: Name == "sink-input-by-media-role:event"
     property bool isPlayback
+    property var pulseStream: model.PulseObject
 
     width: parent ? parent.width : undefined
 
@@ -83,6 +84,7 @@ ColumnLayout {
 
                 DeviceComboBox {
                     id: deviceComboBox
+                    streamObject: delegate.pulseStream
                     Layout.minimumWidth: Kirigami.Units.gridUnit * 12
                     visible: !isEventStream && count > 1
                 }

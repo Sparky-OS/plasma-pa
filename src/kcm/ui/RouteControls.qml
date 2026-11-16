@@ -12,7 +12,8 @@ ColumnLayout {
     required property var controller
     property string sourceName: ""
     property bool combined: false
-    readonly property var state: combined ? controller.combined : (controller.listens[sourceName] || {})
+    property var routeState: ({})
+    readonly property var state: combined ? controller.combined : routeState
     readonly property string input: combined ? (state.source || "") : sourceName
     readonly property string output: state.output || ""
     readonly property bool wanted: state.enabled || false
@@ -20,7 +21,7 @@ ColumnLayout {
         if (combined) {
             controller.setCombined(source, output, enabled);
         } else {
-            controller.setListen(source, output, enabled);
+            controller.setListenRoute(state.id || "", source, output, enabled);
         }
     }
 
@@ -82,8 +83,8 @@ ColumnLayout {
         actions: [
             Kirigami.Action {
                 text: i18nd("kcm_pulseaudio", "Retry")
-                visible: root.wanted && (root.state.reason || 0) > 0
-                onTriggered: root.configure(root.input, root.output, true)
+                visible: (root.state.reason || 0) > 0
+                onTriggered: root.configure(root.input, root.output, root.wanted)
             }
         ]
     }

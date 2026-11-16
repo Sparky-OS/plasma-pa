@@ -8,14 +8,18 @@
 
 import QtQuick
 import QtQuick.Controls
+import org.kde.plasma.private.volume
 
 ComboBox {
     textRole: "Description"
     valueRole: "Index"
 
     property int deviceIndex: DeviceIndex
+    property var streamObject: null
 
-    onActivated: DeviceIndex = currentValue
+    onActivated: {
+        if (!GlobalService.routeStream(streamObject, currentValue)) DeviceIndex = currentValue;
+    }
 
     onDeviceIndexChanged: {
         currentIndex = indexOfValue(DeviceIndex)

@@ -77,6 +77,15 @@ ColumnLayout {
 
     Kirigami.InlineMessage {
         Layout.fillWidth: true
+        visible: root.combined && root.wanted && (root.state.reason || 0) === 0
+            && Object.values(root.controller.listens).some(route => route.enabled && (route.reason || 0) === 0
+                && route.source === root.input && route.output === root.output)
+        type: Kirigami.MessageType.Warning
+        text: i18nd("kcm_pulseaudio", "This microphone is also being sent to this output. The combined recording captures it twice, which can cause an echo.")
+    }
+
+    Kirigami.InlineMessage {
+        Layout.fillWidth: true
         visible: text.length > 0
         type: (root.state.reason || 0) > 0 || root.controller.serviceError.length > 0 ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
         text: root.controller.serviceError || root.controller.message(root.state)

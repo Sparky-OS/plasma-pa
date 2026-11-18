@@ -1,0 +1,6 @@
+add_executable(plasma-pa-soundformats-helper soundformatshelper.cpp ../soundformatconf.cpp)
+target_include_directories(plasma-pa-soundformats-helper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(plasma-pa-soundformats-helper PRIVATE Qt::Core KF6::AuthCore)
+install(TARGETS plasma-pa-soundformats-helper DESTINATION ${KAUTH_HELPER_INSTALL_DIR})
+kauth_install_helper_files(plasma-pa-soundformats-helper org.kde.plasma.pa.soundformats root)
+kauth_install_actions(org.kde.plasma.pa.soundformats org.kde.plasma.pa.soundformats.actions)

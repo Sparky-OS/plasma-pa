@@ -12,3 +12,10 @@ ecm_add_test(
     TEST_NAME percentvalidatortest
     LINK_LIBRARIES Qt6::Test Qt6::Gui plasma-volume
 )
+
+ecm_add_test(
+    soundformatconftest.cpp ../src/soundformatconf.cpp
+    TEST_NAME soundformatconftest
+    LINK_LIBRARIES Qt6::Test Qt6::Core
+)
+target_include_directories(soundformatconftest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)

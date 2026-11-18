@@ -19,6 +19,7 @@ set(plasma-volume_SRCS
     devicerenamemodel.cpp devicerenamemodel.h
     devicerenamesaver.cpp devicerenamesaver.h
     percentvalidator.cpp percentvalidator.h
+    soundformatconf.cpp soundformatconf.h
     microphonetest.cpp microphonetest.h
 )
 
@@ -43,6 +44,7 @@ target_sources(plasma-volume-declarative PRIVATE
     qml/globalservice.cpp qml/globalservice.h
     qml/dbusinterface.cpp
     qml/routingcontroller.cpp qml/routingcontroller.h
+    qml/soundformats.cpp qml/soundformats.h
 )
 target_include_directories(plasma-volume-declarative PRIVATE qml/)
 
@@ -77,6 +79,7 @@ target_link_libraries(plasma-volume-declarative PRIVATE
     KF6::ConfigCore
     KF6::ConfigGui
     KF6::CoreAddons
+    KF6::AuthCore
     KF6::PulseAudioQt
     Canberra::Canberra
     PkgConfig::LIBPULSE
@@ -108,6 +111,7 @@ install(TARGETS plasma-volume ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELI
 
 add_subdirectory(kcm)
 add_subdirectory(kded)
+add_subdirectory(kauth)
 
 ecm_qt_install_logging_categories(EXPORT PLASMAPA FILE plasmapa.categories DESTINATION ${KDE_INSTALL_LOGGINGCATEGORIESDIR})
 

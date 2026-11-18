@@ -1,0 +1,23 @@
+[org.kde.plasma.pa.soundformats.write]
+Name="Change the sound format settings for every account"
+Name[pl]="Zmień ustawienia formatu dźwięku dla wszystkich kont"
+Name[pt_BR]="Alterar as configurações de formato do som para todas as contas"
+Name[fr]="Modifier les réglages de format du son pour tous les comptes"
+Name[de]="Die Einstellungen für das Tonformat für alle Konten ändern"
+Name[es]="Cambiar los ajustes de formato del sonido para todas las cuentas"
+Name[ja]="すべてのアカウントのサウンド形式の設定を変更する"
+Name[ko]="모든 계정의 소리 형식 설정 변경"
+Name[zh_CN]="更改所有账户的声音格式设置"
+Name[zh_TW]="變更所有帳號的聲音格式設定"
+Description="Authentication is required to change the sound format settings for every account on this computer"
+Description[pl]="Zmiana ustawień formatu dźwięku dla wszystkich kont na tym komputerze wymaga uwierzytelnienia"
+Description[pt_BR]="É necessária autenticação para alterar as configurações de formato do som de todas as contas deste computador"
+Description[fr]="Une authentification est nécessaire pour modifier les réglages de format du son de tous les comptes de cet ordinateur"
+Description[de]="Zum Ändern der Einstellungen für das Tonformat aller Konten auf diesem Computer ist eine Authentifizierung nötig"
+Description[es]="Se necesita autenticación para cambiar los ajustes de formato del sonido de todas las cuentas de este equipo"
+Description[ja]="このコンピュータのすべてのアカウントのサウンド形式の設定を変更するには認証が必要です"
+Description[ko]="이 컴퓨터의 모든 계정의 소리 형식 설정을 변경하려면 인증이 필요합니다"
+Description[zh_CN]="更改此计算机上所有账户的声音格式设置需要身份验证"
+Description[zh_TW]="變更這台電腦上所有帳號的聲音格式設定需要驗證身分"
+Policy=auth_admin
+Persistence=session

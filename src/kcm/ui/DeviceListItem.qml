@@ -29,6 +29,7 @@ ColumnLayout {
     property alias portVisible: portBox.visible
     property bool comboBoxLabelsVisible: false
     property var routingController
+    property var soundFormats
 
     RowLayout {
         spacing: Kirigami.Units.smallSpacing
@@ -174,6 +175,15 @@ ColumnLayout {
             popup.rightMargin: delegate.ListView.view.Layout.rightMargin
             popup.x: mirrored ? 0 : width - popup.width
         }
+    }
+
+    Label {
+        Layout.fillWidth: true
+        Layout.leftMargin: Kirigami.Units.largeSpacing * 2
+        visible: text !== ""
+        font: Kirigami.Theme.smallFont
+        opacity: 0.7
+        text: soundFormats && soundFormats.live ? (soundFormats.live[pulseObject.name] || "") : ""
     }
 
     RowLayout {

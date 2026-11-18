@@ -68,6 +68,17 @@ KCM.ScrollViewKCM {
         id: moduleManager
     }
 
+    SoundFormats {
+        id: soundFormats
+    }
+
+    Timer {
+        interval: 3000
+        running: soundFormats && Window.window !== null
+        repeat: true
+        onTriggered: soundFormats.refresh()
+    }
+
     actions: [
         Kirigami.Action {
             text: i18nd("kcm_pulseaudio", "Show Virtual Streams")
@@ -92,6 +103,11 @@ KCM.ScrollViewKCM {
             text: i18nd("kcm_pulseaudio", "Rename Devices…")
             visible: Server.hasWirePlumber && Server.isPipeWire
             onTriggered: kcm.push("RenameDevices.qml", { "config": config })
+        },
+        Kirigami.Action {
+            icon.name: "audio-card"
+            text: i18nd("kcm_pulseaudio", "Sound Quality…")
+            onTriggered: kcm.push("SoundFormats.qml")
         },
         Kirigami.Action {
             icon.name: "configure"
@@ -169,6 +185,7 @@ KCM.ScrollViewKCM {
                 delegate: DeviceListItem {
                     isPlayback: true
                     routingController: routing
+                    soundFormats: soundFormats
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
                 }
             }
@@ -194,6 +211,7 @@ KCM.ScrollViewKCM {
                 delegate: DeviceListItem {
                     isPlayback: false
                     routingController: routing
+                    soundFormats: soundFormats
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
                 }
             }

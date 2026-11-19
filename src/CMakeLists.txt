@@ -48,6 +48,7 @@ target_sources(plasma-volume-declarative PRIVATE
     qml/routingcontroller.cpp qml/routingcontroller.h
     qml/soundformats.cpp qml/soundformats.h
     qml/speakersetup.cpp qml/speakersetup.h
+    qml/speakerlevels.cpp qml/speakerlevels.h
 )
 target_include_directories(plasma-volume-declarative PRIVATE qml/)
 

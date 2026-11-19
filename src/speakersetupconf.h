@@ -16,10 +16,11 @@
  * One file, 50-speaker-page.conf in pipewire/pipewire.conf.d under a base directory (~/.config for one account, /etc for
  * every account), beside ORDER 20's 50-sound-page.conf and the edition's 00-sparky-stereo-audio.conf. It holds one
  * filter-chain sink per device the person set up. Nothing is written for a device whose speakers are all at their
- * defaults (levels at 0 dB, equal distances, every speaker large): the device then has no filter in its signal path.
+ * defaults (equal distances, every speaker large): the device then has no filter in its signal path.
+ * A speaker's level is the device's channel volume (the same value as "Show Channels"), set live and never written here.
  * The class never computes a default; a key that is absent is the default.
  *
- * State, as a map: "devices" { nodeName { "positions" [ch], "label" text, "levels" {ch: dB}, "distances" {ch: metres},
+ * State, as a map: "devices" { nodeName { "positions" [ch], "label" text, "distances" {ch: metres},
  * "small" [ch], "crossover" Hz } }. "positions" is the channel map of the device's current profile and the only
  * required key. "distances", when present, names every position; the delays are relative to the farthest speaker.
  */
@@ -29,7 +30,7 @@ public:
     static QString fileName();
     static QString mark();
 
-    /** Empty when the state is acceptable, else a code naming the first value refused: "device.name", "device.levels"... */
+    /** Empty when the state is acceptable, else a code naming the first value refused: "device.name", "device.distances"... */
     static QString validate(const QVariantMap &state);
 
     /** Relative path (under the base directory) to file content; an empty content means that file is not wanted. */
@@ -62,15 +63,12 @@ public:
     static double angle(const QString &position, const QStringList &positions);
 
     static constexpr double speedOfSound = 343.0; // m/s, dry air at 20 C
-    static constexpr double minLevel = -30.0;
-    static constexpr double maxLevel = 15.0;
     static constexpr double minDistance = 0.3;
     static constexpr double maxDistance = 30.0;
     static constexpr int minCrossover = 40;
     static constexpr int maxCrossover = 250;
     static constexpr int defaultCrossover = 80;
 
-    /** The linear gain of a level in dB, and the delay in seconds of a speaker at distance (m) when the farthest stands at farthest (m). */
-    static double gain(double db);
+    /** The delay in seconds of a speaker at distance (m) when the farthest stands at farthest (m). */
     static double delaySeconds(double distance, double farthest);
 };

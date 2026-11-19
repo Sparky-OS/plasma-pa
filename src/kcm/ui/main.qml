@@ -195,7 +195,7 @@ KCM.ScrollViewKCM {
                     soundFormats: soundFormatsModel
                     speakerSetup: speakerSetupModel
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
-                    onSpeakerSetupRequested: name => kcm.push("SpeakerSetup.qml", { "deviceName": name })
+                    onSpeakerSetupRequested: name => kcm.push("SpeakerSetup.qml", { "deviceName": name, "config": config })
                 }
             }
 

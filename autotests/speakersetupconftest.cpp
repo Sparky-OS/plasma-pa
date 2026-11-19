@@ -33,9 +33,9 @@ QVariantMap dev(const QVariantMap &more)
     return d;
 }
 
-QVariantMap oneLevel(const QVariant &value)
+QVariantMap anEffect()
 {
-    return withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"FL"_s, value}}}}));
+    return withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}}));
 }
 
 QVariantMap allDistances(double v)
@@ -64,7 +64,7 @@ private Q_SLOTS:
         QTest::addColumn<QString>("code");
 
         const auto named = [](const QString &name) {
-            return withDevice(name, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+            return withDevice(name, dev({{u"small"_s, QVariantList{u"FL"_s}}}));
         };
         QTest::newRow("unknown top key") << QVariantMap{{u"script"_s, u"rm -rf /"_s}} << u"state.key"_s;
         QTest::newRow("devices not a map") << QVariantMap{{u"devices"_s, u"x"_s}} << u"devices"_s;
@@ -93,39 +93,31 @@ private Q_SLOTS:
 
         QTest::newRow("device not a map") << QVariantMap{{u"devices"_s, QVariantMap{{NODE, u"x"_s}}}} << u"device"_s;
         QTest::newRow("unknown device key") << withDevice(NODE, dev({{u"exec"_s, u"x"_s}})) << u"device.key"_s;
-        QTest::newRow("no positions") << withDevice(NODE, QVariantMap{{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}) << u"device.positions"_s;
-        QTest::newRow("two positions") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s}}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})
+        QTest::newRow("no positions") << withDevice(NODE, QVariantMap{{u"small"_s, QVariantList{u"FL"_s}}}) << u"device.positions"_s;
+        QTest::newRow("two positions") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s}}, {u"small"_s, QVariantList{u"FL"_s}}})
                                        << u"device.positions"_s;
         QTest::newRow("nine positions")
             << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s, u"FC"_s, u"LFE"_s, u"RL"_s, u"RR"_s, u"SL"_s, u"SR"_s, u"RC"_s}},
-                                            {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})
+                                            {u"small"_s, QVariantList{u"FL"_s}}})
             << u"device.positions"_s;
-        QTest::newRow("a repeated position") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FL"_s, u"FC"_s}}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})
+        QTest::newRow("a repeated position") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FL"_s, u"FC"_s}}, {u"small"_s, QVariantList{u"FL"_s}}})
                                              << u"device.positions"_s;
-        QTest::newRow("a position that is a node name") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s, u"in_FL:In\"] }"_s}}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})
+        QTest::newRow("a position that is a node name") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s, u"in_FL:In\"] }"_s}}, {u"small"_s, QVariantList{u"FL"_s}}})
                                                         << u"device.positions"_s;
-        QTest::newRow("a position that is a number") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s, 3}}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})
+        QTest::newRow("a position that is a number") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"FL"_s, u"FR"_s, 3}}, {u"small"_s, QVariantList{u"FL"_s}}})
                                                      << u"device.positions"_s;
-        QTest::newRow("a lower case position") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"fl"_s, u"FR"_s, u"FC"_s}}, {u"levels"_s, QVariantMap{{u"FR"_s, -3}}}})
+        QTest::newRow("a lower case position") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"fl"_s, u"FR"_s, u"FC"_s}}, {u"small"_s, QVariantList{u"FR"_s}}})
                                                << u"device.positions"_s;
 
         for (const QString &bad : {u"a\u2028b"_s, u"a\u0085b"_s, u"a\u200b" "b"_s, u"a\u00a0\u2029"_s, u"a\uff02b"_s, u"a\uff3cb"_s, u"a\"b"_s, u"a\nb"_s, u"a\n"_s, u"a\\b"_s, u"a{b"_s, u"a}b"_s, u"a[b"_s, u"a]b"_s, u"a#b"_s, u"a=b"_s, u"a,b"_s, u"a\tb"_s, u"a\rb"_s,
                                    u" a"_s, u""_s, u"a;b"_s, u"a$b"_s, u"a`b"_s, u"a<b"_s}) {
-            QTest::newRow(qPrintable(u"label "_s + QString::fromLatin1(QByteArray(bad.toUtf8()).toPercentEncoding()))) << withDevice(NODE, dev({{u"label"_s, bad}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}))
+            QTest::newRow(qPrintable(u"label "_s + QString::fromLatin1(QByteArray(bad.toUtf8()).toPercentEncoding()))) << withDevice(NODE, dev({{u"label"_s, bad}, {u"small"_s, QVariantList{u"FL"_s}}}))
                                                                                                                         << u"device.label"_s;
         }
-        QTest::newRow("label over the limit") << withDevice(NODE, dev({{u"label"_s, QString(81, u'a')}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})) << u"device.label"_s;
-        QTest::newRow("label not a string") << withDevice(NODE, dev({{u"label"_s, 5}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})) << u"device.label"_s;
+        QTest::newRow("label over the limit") << withDevice(NODE, dev({{u"label"_s, QString(81, u'a')}, {u"small"_s, QVariantList{u"FL"_s}}})) << u"device.label"_s;
+        QTest::newRow("label not a string") << withDevice(NODE, dev({{u"label"_s, 5}, {u"small"_s, QVariantList{u"FL"_s}}})) << u"device.label"_s;
 
-        QTest::newRow("level below the range") << oneLevel(-30.5) << u"device.levels"_s;
-        QTest::newRow("level above the range") << oneLevel(15.5) << u"device.levels"_s;
-        QTest::newRow("level as text") << oneLevel(u"-3"_s) << u"device.levels"_s;
-        QTest::newRow("level as a bool") << oneLevel(true) << u"device.levels"_s;
-        QTest::newRow("level not a number") << oneLevel(std::numeric_limits<double>::quiet_NaN()) << u"device.levels"_s;
-        QTest::newRow("level infinite") << oneLevel(std::numeric_limits<double>::infinity()) << u"device.levels"_s;
-        QTest::newRow("level for a position the device lacks") << withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"SL"_s, -3}}}})) << u"device.levels"_s;
-        QTest::newRow("level for an unsafe position") << withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"FL\"x"_s, -3}}}})) << u"device.levels"_s;
-        QTest::newRow("levels not a map") << withDevice(NODE, dev({{u"levels"_s, -3}})) << u"device.levels"_s;
+        QTest::newRow("levels are the device's channel volumes, never in a file") << withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}, {u"small"_s, QVariantList{u"FL"_s}}})) << u"device.key"_s;
 
         QVariantMap d = allDistances(3);
         d.insert(u"FL"_s, 0.29);
@@ -152,11 +144,11 @@ private Q_SLOTS:
         QTest::newRow("the subwoofer small") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"LFE"_s}}})) << u"device.small"_s;
         QTest::newRow("small speaker the device lacks") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"SL"_s}}})) << u"device.small"_s;
         QTest::newRow("small twice") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s, u"FL"_s}}})) << u"device.small"_s;
-        QTest::newRow("small empty") << withDevice(NODE, dev({{u"small"_s, QVariantList{}}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})) << u"device.small"_s;
+        QTest::newRow("small empty") << withDevice(NODE, dev({{u"small"_s, QVariantList{}}, {u"distances"_s, [] { QVariantMap m = allDistances(3); m.insert(u"RL"_s, 2); return m; }()}})) << u"device.small"_s;
         QTest::newRow("small as text") << withDevice(NODE, dev({{u"small"_s, u"FL"_s}})) << u"device.small"_s;
         QTest::newRow("small unsafe") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL\"] x"_s}}})) << u"device.small"_s;
 
-        QTest::newRow("crossover without small speakers") << withDevice(NODE, dev({{u"crossover"_s, 80}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})) << u"device.crossover"_s;
+        QTest::newRow("crossover without small speakers") << withDevice(NODE, dev({{u"crossover"_s, 80}, {u"distances"_s, [] { QVariantMap m = allDistances(3); m.insert(u"RL"_s, 2); return m; }()}})) << u"device.crossover"_s;
         QTest::newRow("crossover too low") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, 39}})) << u"device.crossover"_s;
         QTest::newRow("crossover too high") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, 251}})) << u"device.crossover"_s;
         QTest::newRow("crossover not whole") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, 80.5}})) << u"device.crossover"_s;
@@ -165,7 +157,7 @@ private Q_SLOTS:
             << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, std::numeric_limits<double>::quiet_NaN()}})) << u"device.crossover"_s;
 
         QTest::newRow("a device with nothing set") << withDevice(NODE, dev({})) << u"device.empty"_s;
-        QTest::newRow("only zero levels") << withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"FL"_s, 0}}}})) << u"device.empty"_s;
+        
         QTest::newRow("only equal distances") << withDevice(NODE, dev({{u"distances"_s, allDistances(2.5)}})) << u"device.empty"_s;
     }
     void validateRefuses()
@@ -179,7 +171,7 @@ private Q_SLOTS:
     {
         QVariantMap devices;
         for (int i = 0; i < 9; ++i) {
-            devices.insert(u"alsa_output.card%1"_s.arg(i), dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+            devices.insert(u"alsa_output.card%1"_s.arg(i), dev({{u"small"_s, QVariantList{u"FL"_s}}}));
         }
         QCOMPARE(SpeakerSetupConf::validate(QVariantMap{{u"devices"_s, devices}}), u"devices"_s);
     }
@@ -188,21 +180,19 @@ private Q_SLOTS:
     {
         QTest::addColumn<QVariantMap>("state");
         QTest::newRow("nothing at all") << QVariantMap{};
-        QTest::newRow("a level") << oneLevel(-3.5);
-        QTest::newRow("the largest level") << oneLevel(15);
-        QTest::newRow("the smallest level") << oneLevel(-30);
-        QTest::newRow("distances that differ") << withDevice(NODE, dev({{u"distances"_s, [] {
+        QTest::newRow("small speakers") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}}));
+                        QTest::newRow("distances that differ") << withDevice(NODE, dev({{u"distances"_s, [] {
                                                                            QVariantMap m = allDistances(3);
                                                                            m.insert(u"RL"_s, 1.8);
                                                                            return m;
                                                                        }()}}));
         QTest::newRow("small speakers and the crossover") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s, u"FR"_s, u"FC"_s}}, {u"crossover"_s, 120}}));
-        QTest::newRow("a label with letters of another script") << withDevice(NODE, dev({{u"label"_s, u"Alto-falantes (áudio 5.1) 標準"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
-        QTest::newRow("a label with the fullwidth colon of a Chinese translation") << withDevice(NODE, dev({{u"label"_s, u"\u626c\u58f0\u5668\u8bbe\u7f6e\uff1arig 71"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
-        QTest::newRow("a label with fullwidth parentheses and an ideographic space") << withDevice(NODE, dev({{u"label"_s, u"\u30b9\u30d4\u30fc\u30ab\u30fc\uff08rig\u3000\u0035\uff09"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
-        QTest::newRow("a label with a combining mark") << withDevice(NODE, dev({{u"label"_s, u"Cafe\u0301 audio"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
-        QTest::newRow("a real bluez name") << withDevice(u"bluez_output.AA_BB_CC_DD_EE_FF.1"_s, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
-        QTest::newRow("a usb name with plus and colon") << withDevice(u"alsa_output.usb-Rig_DAC+Dock-00.analog-surround-71:1"_s, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+        QTest::newRow("a label with letters of another script") << withDevice(NODE, dev({{u"label"_s, u"Alto-falantes (áudio 5.1) 標準"_s}, {u"small"_s, QVariantList{u"FL"_s}}}));
+        QTest::newRow("a label with the fullwidth colon of a Chinese translation") << withDevice(NODE, dev({{u"label"_s, u"\u626c\u58f0\u5668\u8bbe\u7f6e\uff1arig 71"_s}, {u"small"_s, QVariantList{u"FL"_s}}}));
+        QTest::newRow("a label with fullwidth parentheses and an ideographic space") << withDevice(NODE, dev({{u"label"_s, u"\u30b9\u30d4\u30fc\u30ab\u30fc\uff08rig\u3000\u0035\uff09"_s}, {u"small"_s, QVariantList{u"FL"_s}}}));
+        QTest::newRow("a label with a combining mark") << withDevice(NODE, dev({{u"label"_s, u"Cafe\u0301 audio"_s}, {u"small"_s, QVariantList{u"FL"_s}}}));
+        QTest::newRow("a real bluez name") << withDevice(u"bluez_output.AA_BB_CC_DD_EE_FF.1"_s, dev({{u"small"_s, QVariantList{u"FL"_s}}}));
+        QTest::newRow("a usb name with plus and colon") << withDevice(u"alsa_output.usb-Rig_DAC+Dock-00.analog-surround-71:1"_s, dev({{u"small"_s, QVariantList{u"FL"_s}}}));
     }
     void validateAccepts()
     {
@@ -220,9 +210,6 @@ private Q_SLOTS:
 
     void thePredictedNumbers()
     {
-        QCOMPARE(SpeakerSetupConf::gain(0), 1.0);
-        QVERIFY(qAbs(SpeakerSetupConf::gain(-6.0206) - 0.5) < 1e-4);
-        QVERIFY(qAbs(SpeakerSetupConf::gain(20) - 10.0) < 1e-12);
         // 3.43 m nearer than the farthest speaker is 10 ms
         QVERIFY(qAbs(SpeakerSetupConf::delaySeconds(2.0, 5.43) - 0.01) < 1e-12);
         QCOMPARE(SpeakerSetupConf::delaySeconds(5.0, 5.0), 0.0);
@@ -236,7 +223,6 @@ private Q_SLOTS:
         d.insert(u"RR"_s, 3.686);
         const QVariantMap state = withDevice(NODE,
                                              dev({{u"label"_s, u"Surround 5.1"_s},
-                                                  {u"levels"_s, QVariantMap{{u"FC"_s, 6}, {u"LFE"_s, -4}}},
                                                   {u"distances"_s, d},
                                                   {u"small"_s, QVariantList{u"FL"_s, u"FR"_s}},
                                                   {u"crossover"_s, 100}}));
@@ -248,9 +234,11 @@ private Q_SLOTS:
         QVERIFY(text.contains(u"node.name = \"speaker_setup.%1\""_s.arg(NODE)));
         QVERIFY(text.contains(u"target.object = \"%1\""_s.arg(NODE)));
         QVERIFY(text.contains(u"audio.position = [ FL FR FC LFE RL RR ]"_s));
-        // FC +6 dB, LFE -4 dB
-        QVERIFY(text.contains(u"Mult = %1"_s.arg(QString::number(SpeakerSetupConf::gain(6), 'f', 9))));
-        QVERIFY(text.contains(u"Mult = %1"_s.arg(QString::number(SpeakerSetupConf::gain(-4), 'f', 9))));
+        // no level in the file: a level is the device's channel volume
+        QVERIFY(!text.contains(u"linear"_s));
+        QVERIFY(!text.contains(u"Mult"_s));
+        // the setup's output waits for its device and is never sent to another: both flags together
+        QVERIFY(text.contains(u"node.dont-fallback = true node.linger = true"_s));
         // the farthest speaker, RR, has no delay node; FL is 1.686 m nearer
         QVERIFY(!text.contains(u"name = d_RR "_s));
         QVERIFY(text.contains(u"\"Delay (s)\" = %1"_s.arg(QString::number(1.686 / 343.0, 'f', 9))));
@@ -270,7 +258,7 @@ private Q_SLOTS:
         QVariantMap d = allDistances(3.0);
         d.insert(u"FL"_s, 2.0);
         const QVariantMap state = withDevice(NODE,
-                                             dev({{u"levels"_s, QVariantMap{{u"FC"_s, 6}, {u"LFE"_s, -4}, {u"FL"_s, 1}}},
+                                             dev({
                                                   {u"distances"_s, d},
                                                   {u"small"_s, QVariantList{u"FL"_s, u"FR"_s, u"FC"_s, u"RL"_s, u"RR"_s}}}));
         QTemporaryDir dir;
@@ -281,8 +269,8 @@ private Q_SLOTS:
         static const QSet<QString> known = {u"context.modules"_s, u"name"_s, u"flags"_s, u"args"_s, u"node.description"_s, u"media.name"_s, u"filter.graph"_s,
                                             u"nodes"_s, u"type"_s, u"label"_s, u"config"_s, u"control"_s, u"links"_s, u"output"_s, u"input"_s, u"inputs"_s,
                                             u"outputs"_s, u"capture.props"_s, u"playback.props"_s, u"node.name"_s, u"media.class"_s, u"audio.channels"_s,
-                                            u"audio.position"_s, u"target.object"_s, u"node.passive"_s, u"stream.dont-remix"_s,
-                                            u"Mult"_s, u"Add"_s, u"Freq"_s, u"Q"_s, u"max-delay"_s, u"Delay (s)"_s, u"Gain 1"_s, u"Gain 2"_s, u"Gain 3"_s,
+                                            u"audio.position"_s, u"target.object"_s, u"node.passive"_s, u"stream.dont-remix"_s, u"node.dont-fallback"_s, u"node.linger"_s,
+                                            u"Freq"_s, u"Q"_s, u"max-delay"_s, u"Delay (s)"_s, u"Gain 1"_s, u"Gain 2"_s, u"Gain 3"_s,
                                             u"Gain 4"_s, u"Gain 5"_s, u"Gain 6"_s, u"Gain 7"_s, u"Gain 8"_s};
         static const QRegularExpression key(u"(\"[^\"]+\"|[A-Za-z][A-Za-z0-9_.-]*)\\s*=\\s"_s);
         auto it = key.globalMatch(text);
@@ -303,7 +291,7 @@ private Q_SLOTS:
 
     void roundTrip()
     {
-        const QVariantMap state = withDevice(NODE, dev({{u"levels"_s, QVariantMap{{u"FC"_s, 2.5}}}, {u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, 80}}));
+        const QVariantMap state = withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s}}, {u"crossover"_s, 80}}));
         QTemporaryDir dir;
         QVERIFY(SpeakerSetupConf::write(dir.path(), state));
         const QVariantMap got = SpeakerSetupConf::read(dir.path());
@@ -315,7 +303,7 @@ private Q_SLOTS:
     {
         QTemporaryDir dir;
         QString error;
-        QVERIFY(!SpeakerSetupConf::write(dir.path(), withDevice(u"alsa_output.x\n"_s, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}})), &error));
+        QVERIFY(!SpeakerSetupConf::write(dir.path(), withDevice(u"alsa_output.x\n"_s, dev({{u"small"_s, QVariantList{u"FL"_s}}})), &error));
         QVERIFY(error.startsWith(u"invalid: device.name"_s));
         QVERIFY(fileText(dir.path()).isEmpty());
     }
@@ -328,7 +316,7 @@ private Q_SLOTS:
         QVERIFY(mine.open(QFile::WriteOnly));
         mine.write("# the Sound Quality page's file\ncontext.properties = { default.clock.rate = 96000 }\n");
         mine.close();
-        QVERIFY(SpeakerSetupConf::write(dir.path(), oneLevel(-3)));
+        QVERIFY(SpeakerSetupConf::write(dir.path(), anEffect()));
         QVERIFY(!fileText(dir.path()).isEmpty());
         QVERIFY(SpeakerSetupConf::write(dir.path(), QVariantMap{}));
         QVERIFY(fileText(dir.path()).isEmpty());
@@ -344,7 +332,7 @@ private Q_SLOTS:
         foreign.write("# somebody else's file\n");
         foreign.close();
         QString error;
-        QVERIFY(!SpeakerSetupConf::write(dir.path(), oneLevel(-3), &error));
+        QVERIFY(!SpeakerSetupConf::write(dir.path(), anEffect(), &error));
         QVERIFY(error.startsWith(u"foreign: "_s));
         QVERIFY(SpeakerSetupConf::write(dir.path(), QVariantMap{}));
         QCOMPARE(fileText(dir.path()), QByteArray("# somebody else's file\n"));
@@ -355,14 +343,15 @@ private Q_SLOTS:
         QTest::addColumn<QByteArray>("json");
         QTest::addColumn<QString>("code");
         const QByteArray head = "{\"devices\":{\"alsa_output.x\":{\"positions\":[\"FL\",\"FR\",\"FC\",\"LFE\",\"RL\",\"RR\"],";
-        QTest::newRow("numbers as JSON doubles") << head + "\"levels\":{\"FL\":-3.5},\"small\":[\"FL\"],\"crossover\":80.0}}}" << QString();
-        QTest::newRow("a quote in a label escaped in JSON") << head + "\"label\":\"a\\\"b\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
-        QTest::newRow("a newline in a label escaped in JSON") << head + "\"label\":\"a\\nb\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
+        QTest::newRow("numbers as JSON doubles") << head + "\"small\":[\"FL\"],\"crossover\":80.0}}}" << QString();
+        QTest::newRow("a quote in a label escaped in JSON") << head + "\"label\":\"a\\\"b\",\"small\":[\"FL\"]}}}" << u"device.label"_s;
+        QTest::newRow("a newline in a label escaped in JSON") << head + "\"label\":\"a\\nb\",\"small\":[\"FL\"]}}}" << u"device.label"_s;
         QTest::newRow("a final newline in a node name escaped in JSON")
-            << QByteArray("{\"devices\":{\"alsa_output.x\\n\":{\"positions\":[\"FL\",\"FR\",\"FC\"],\"levels\":{\"FL\":-3}}}}") << u"device.name"_s;
-        QTest::newRow("a unicode escape of a quote") << head + "\"label\":\"a\\u0022b\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
-        QTest::newRow("a level as a string") << head + "\"levels\":{\"FL\":\"-3\"}}}}" << u"device.levels"_s;
-        QTest::newRow("a level out of range") << head + "\"levels\":{\"FL\":1e300}}}}" << u"device.levels"_s;
+            << QByteArray("{\"devices\":{\"alsa_output.x\\n\":{\"positions\":[\"FL\",\"FR\",\"FC\"],\"small\":[\"FL\"]}}}") << u"device.name"_s;
+        QTest::newRow("a unicode escape of a quote") << head + "\"label\":\"a\\u0022b\",\"small\":[\"FL\"]}}}" << u"device.label"_s;
+        QTest::newRow("a level in a file") << head + "\"levels\":{\"FL\":-3},\"small\":[\"FL\"]}}}" << u"device.key"_s;
+        QTest::newRow("a distance out of range") << head + "\"distances\":{\"FL\":1e300,\"FR\":3,\"FC\":3,\"LFE\":3,\"RL\":3,\"RR\":3}}}}" << u"device.distances"_s;
+        QTest::newRow("a distance as a string") << head + "\"distances\":{\"FL\":\"3\",\"FR\":3,\"FC\":3,\"LFE\":3,\"RL\":3,\"RR\":3}}}}" << u"device.distances"_s;
         QTest::newRow("a crossover with a fraction") << head + "\"small\":[\"FL\"],\"crossover\":80.5}}}" << u"device.crossover"_s;
         QTest::newRow("an extra top level key") << QByteArray("{\"devices\":{},\"path\":\"/etc/shadow\"}") << u"state.key"_s;
     }

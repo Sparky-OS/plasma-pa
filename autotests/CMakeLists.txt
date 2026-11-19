@@ -33,3 +33,10 @@ ecm_add_test(
     LINK_LIBRARIES Qt6::Test Qt6::Core
 )
 target_include_directories(speakertestsignaltest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
+ecm_add_test(
+    speakerlevelmathtest.cpp
+    TEST_NAME speakerlevelmathtest
+    LINK_LIBRARIES Qt6::Test Qt6::Core
+)
+target_include_directories(speakerlevelmathtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)

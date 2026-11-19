@@ -75,12 +75,6 @@ QString describeWriteError(const QString &code)
 QMap<QString, double> expectedControls(const QVariantMap &dev)
 {
     QMap<QString, double> want;
-    const QVariantMap levels = dev.value(u"levels"_s).toMap();
-    for (auto it = levels.begin(); it != levels.end(); ++it) {
-        if (it.value().toDouble() != 0.0) {
-            want.insert(u"g_%1:Mult"_s.arg(it.key()), SpeakerSetupConf::gain(it.value().toDouble()));
-        }
-    }
     const QVariantMap distances = dev.value(u"distances"_s).toMap();
     double farthest = 0;
     for (auto it = distances.begin(); it != distances.end(); ++it) {
@@ -119,14 +113,6 @@ SpeakerSetup::~SpeakerSetup()
 double SpeakerSetup::speedOfSound() const
 {
     return SpeakerSetupConf::speedOfSound;
-}
-double SpeakerSetup::minLevel() const
-{
-    return SpeakerSetupConf::minLevel;
-}
-double SpeakerSetup::maxLevel() const
-{
-    return SpeakerSetupConf::maxLevel;
 }
 double SpeakerSetup::minDistance() const
 {
@@ -292,11 +278,15 @@ QVariantList SpeakerSetup::readDevices() const
         return out;
     }
     QSet<QString> setups;
+    QSet<QString> present;
     for (const auto &item : doc.array()) {
         const auto props = item.toObject().value(u"info"_s).toObject().value(u"props"_s).toObject();
         const QString name = propString(props, u"node.name"_s);
-        if (propString(props, u"media.class"_s) == u"Audio/Sink"_s && name.startsWith(u"speaker_setup."_s)) {
-            setups.insert(name);
+        if (propString(props, u"media.class"_s) == u"Audio/Sink"_s) {
+            present.insert(name);
+            if (name.startsWith(u"speaker_setup."_s)) {
+                setups.insert(name);
+            }
         }
     }
     for (const auto &item : doc.array()) {
@@ -335,7 +325,11 @@ QVariantList SpeakerSetup::readDevices() const
             (SpeakerSetupConf::validPosition(t) ? known : unknown) << t;
         }
         QString reason;
-        if (SpeakerSetupConf::isSetupSink(name)) {
+        const bool setupSink = SpeakerSetupConf::isSetupSink(name);
+        const bool deviceConnected = !setupSink || present.contains(name.mid(QStringLiteral("speaker_setup.").size()));
+        if (setupSink && !deviceConnected) {
+            reason = i18nd("kcm_pulseaudio", "The device of this speaker setup is not connected. The setup waits for it and plays nowhere else.");
+        } else if (setupSink) {
             reason = i18nd("kcm_pulseaudio", "This is the speaker setup of another device. Set up the speakers from that device.");
         } else if (channels <= 2) {
             reason = channels == 0 ? i18nd("kcm_pulseaudio", "The channels of this device could not be read, so Speaker Setup is not offered.")
@@ -356,7 +350,8 @@ QVariantList SpeakerSetup::readDevices() const
                         {u"eligible"_s, reason.isEmpty()},
                         {u"reason"_s, reason},
                         {u"setupActive"_s, setups.contains(SpeakerSetupConf::sinkName(name))},
-                        {u"setupSink"_s, SpeakerSetupConf::sinkName(name)}};
+                        {u"setupSink"_s, SpeakerSetupConf::sinkName(name)},
+                        {u"deviceConnected"_s, deviceConnected}};
         out << dev;
     }
     return out;
@@ -661,7 +656,7 @@ void SpeakerSetup::startTest(const QString &node, const QStringList &which)
         return;
     }
     const QStringList positions = dev.value(u"positions"_s).toStringList();
-    // Through the speaker setup when there is one, so that what the person hears has the levels and delays; else to the device itself.
+    // Through the speaker setup when there is one, so that what the person hears has the delays and the bass management; else to the device itself.
     const QString target = dev.value(u"setupActive"_s).toBool() ? dev.value(u"setupSink"_s).toString() : node;
     const QString exe = QStandardPaths::findExecutable(u"pw-cat"_s);
     if (exe.isEmpty()) {

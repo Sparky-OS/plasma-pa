@@ -18,11 +18,14 @@ KCM.ScrollViewKCM {
 
     // The device this page was opened for: the node name of a playback device whose profile has more than two channels.
     property string deviceName: ""
+    // The Sound page's settings: "Raise maximum volume" lets a channel go above 100 %.
+    property var config: null
+    readonly property bool raised: config !== null && config !== undefined && config.raiseMaximumVolume === true
     property bool allAccounts: false
     property bool makeDefault: true
     property string selected: ""
     property bool dirty: false
-    property var work: ({levels: {}, distances: null, small: [], crossover: 0})
+    property var work: ({distances: null, small: [], crossover: 0})
     readonly property int textWidth: Kirigami.Units.gridUnit * 30
     readonly property var info: {
         const list = setup.devices
@@ -62,6 +65,12 @@ KCM.ScrollViewKCM {
         id: setup
     }
 
+    // The level of a speaker is its channel volume, the value "Show Channels" shows: nothing is written and nothing restarts.
+    SpeakerLevels {
+        id: channelLevels
+        node: page.deviceName
+    }
+
     Timer {
         interval: 3000
         running: page.visible && !setup.busy && !setup.testRunning
@@ -99,9 +108,8 @@ KCM.ScrollViewKCM {
 
     function load() {
         const d = clone(savedDevice)
-        let w = {levels: d.levels !== undefined ? d.levels : ({}), distances: d.distances !== undefined ? d.distances : null,
-                 small: d.small !== undefined ? d.small : [], crossover: d.crossover !== undefined ? d.crossover : 0}
-        work = w
+        work = {distances: d.distances !== undefined ? d.distances : null, small: d.small !== undefined ? d.small : [],
+                crossover: d.crossover !== undefined ? d.crossover : 0}
         dirty = false
         if (selected === "" || positions.indexOf(selected) < 0) {
             selected = positions.length > 0 ? positions[0] : ""
@@ -114,12 +122,12 @@ KCM.ScrollViewKCM {
     }
 
     function levelOf(p) {
-        return work.levels[p] !== undefined ? work.levels[p] : 0
+        const v = channelLevels.levels[positions.indexOf(p)]
+        return v === undefined || v === null || !isFinite(v) ? channelLevels.minimumDb() : v
     }
 
     function setLevel(p, db) {
-        work.levels[p] = db
-        touch()
+        channelLevels.setLevel(positions.indexOf(p), db, raised)
     }
 
     function farthest() {
@@ -179,18 +187,8 @@ KCM.ScrollViewKCM {
 
     // What the person has set for this device, as the drop-in's state; an empty object when every speaker is at its defaults.
     function composeDevice() {
-        let levels = {}
         let any = false
-        for (const k in work.levels) {
-            if (work.levels[k] !== 0 && positions.indexOf(k) >= 0) {
-                levels[k] = work.levels[k]
-                any = true
-            }
-        }
         let d = {positions: positions}
-        if (any) {
-            d.levels = levels
-        }
         if (work.distances !== null) {
             let all = positions.map(p => work.distances[p])
             if (Math.max.apply(null, all) > Math.min.apply(null, all)) {
@@ -323,6 +321,16 @@ KCM.ScrollViewKCM {
             enabled: !setup.busy
             onToggled: page.allAccounts = checked
         }
+
+        Label {
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18nd("kcm_pulseaudio", "For every account applies to distances and bass management only. Levels are the device's channel volumes, which each account keeps.")
+        }
     }
 
     view: Flickable {
@@ -443,8 +451,8 @@ KCM.ScrollViewKCM {
                     Kirigami.FormData.label: i18nd("kcm_pulseaudio", "Level:")
                     SpinBox {
                         id: levelBox
-                        from: Math.round(setup.minLevel * 10)
-                        to: Math.round(setup.maxLevel * 10)
+                        from: Math.round(channelLevels.minimumDb() * 10)
+                        to: Math.floor(channelLevels.maximumDb(page.raised) * 10)
                         stepSize: 5
                         editable: true
                         value: Math.round(page.levelOf(page.selected) * 10)
@@ -455,9 +463,18 @@ KCM.ScrollViewKCM {
                     Button {
                         icon.name: "edit-undo"
                         text: i18nd("kcm_pulseaudio", "0 dB")
-                        enabled: page.levelOf(page.selected) !== 0
+                        enabled: Math.abs(page.levelOf(page.selected)) > 0.05
                         onClicked: page.setLevel(page.selected, 0)
                     }
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: page.textWidth
+                    wrapMode: Text.Wrap
+                    font: Kirigami.Theme.smallFont
+                    opacity: 0.7
+                    text: i18nd("kcm_pulseaudio", "Levels are the device's channel volumes, the same values as Show Channels, and change at once. They go from -30 dB to 0 dB, or up to +10.6 dB when Raise maximum volume is on in Configure Volume Controls.")
                 }
 
                 RowLayout {
@@ -624,12 +641,22 @@ KCM.ScrollViewKCM {
         Layout.fillWidth: true
         spacing: Kirigami.Units.smallSpacing
 
-        Item {
+        Label {
             Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            wrapMode: Text.Wrap
+            visible: page.hasChanges
+            text: i18nd("kcm_pulseaudio", "Applying this restarts the sound system: sound stops for a moment in every program.")
+        }
+
+        Item {
+            Layout.fillWidth: !page.hasChanges
         }
 
         Button {
             icon.name: "edit-reset"
+            ToolTip.visible: hovered && enabled
+            ToolTip.text: i18nd("kcm_pulseaudio", "Applying this restarts the sound system: sound stops for a moment in every program.")
             text: i18nd("kcm_pulseaudio", "Back to defaults")
             enabled: !setup.busy && page.eligible && Object.keys(page.savedDevice).length > 0
             onClicked: page.backToDefaults()

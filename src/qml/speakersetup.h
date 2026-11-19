@@ -36,8 +36,6 @@ class SpeakerSetup : public QObject
     Q_PROPERTY(bool feet READ feet WRITE setFeet NOTIFY settingsChanged)
     Q_PROPERTY(int testSeconds READ testSeconds WRITE setTestSeconds NOTIFY settingsChanged)
     Q_PROPERTY(double speedOfSound READ speedOfSound CONSTANT)
-    Q_PROPERTY(double minLevel READ minLevel CONSTANT)
-    Q_PROPERTY(double maxLevel READ maxLevel CONSTANT)
     Q_PROPERTY(double minDistance READ minDistance CONSTANT)
     Q_PROPERTY(double maxDistance READ maxDistance CONSTANT)
     Q_PROPERTY(int minCrossover READ minCrossover CONSTANT)
@@ -60,8 +58,6 @@ public:
     int testSeconds() const { return m_testSeconds; }
     void setTestSeconds(int seconds);
     double speedOfSound() const;
-    double minLevel() const;
-    double maxLevel() const;
     double minDistance() const;
     double maxDistance() const;
     int minCrossover() const;

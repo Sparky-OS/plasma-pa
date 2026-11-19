@@ -70,12 +70,6 @@ QStringList stringList(const QVariant &v, bool *ok)
 
 bool hasEffect(const QVariantMap &dev)
 {
-    const QVariantMap levels = dev.value(u"levels"_s).toMap();
-    for (auto it = levels.begin(); it != levels.end(); ++it) {
-        if (it.value().toDouble() != 0.0) {
-            return true;
-        }
-    }
     const QVariantMap distances = dev.value(u"distances"_s).toMap();
     double lo = 1e9;
     double hi = -1e9;
@@ -119,7 +113,6 @@ QString positionList(const QStringList &positions)
 QString renderDevice(const QString &node, const QVariantMap &dev)
 {
     const QStringList positions = dev.value(u"positions"_s).toStringList();
-    const QVariantMap levels = dev.value(u"levels"_s).toMap();
     const QVariantMap distances = dev.value(u"distances"_s).toMap();
     const QStringList small = dev.value(u"small"_s).toStringList();
     const double crossover = dev.value(u"crossover"_s, SpeakerSetupConf::defaultCrossover).toDouble();
@@ -148,12 +141,6 @@ QString renderDevice(const QString &node, const QVariantMap &dev)
             continue;
         }
         QString head = u"in_%1:Out"_s.arg(p);
-        const double level = levels.value(p).toDouble();
-        if (level != 0.0) {
-            g.node(u"g_"_s + p, u"linear"_s, {}, u"Mult = %1 Add = 0.000000000"_s.arg(num(SpeakerSetupConf::gain(level))));
-            g.link(head, u"g_%1:In"_s.arg(p));
-            head = u"g_%1:Out"_s.arg(p);
-        }
         if (small.contains(p)) {
             const QString control = u"Freq = %1 Q = 0.707106781"_s.arg(num(crossover));
             for (const QString &k : {u"1"_s, u"2"_s}) {
@@ -183,12 +170,6 @@ QString renderDevice(const QString &node, const QVariantMap &dev)
             }
             head = u"mix_LFE:Out"_s;
         }
-        const double level = levels.value(u"LFE"_s).toDouble();
-        if (level != 0.0) {
-            g.node(u"g_LFE"_s, u"linear"_s, {}, u"Mult = %1 Add = 0.000000000"_s.arg(num(SpeakerSetupConf::gain(level))));
-            g.link(head, u"g_LFE:In"_s);
-            head = u"g_LFE:Out"_s;
-        }
         g.outputs.insert(u"LFE"_s, delayAfter(u"LFE"_s, head));
     }
     QStringList outs;
@@ -212,7 +193,7 @@ QString renderDevice(const QString &node, const QVariantMap &dev)
     text += u"        }\n"_s;
     text += u"        capture.props = { node.name = \"%1\" media.class = Audio/Sink audio.channels = %2 audio.position = %3 }\n"_s.arg(
         SpeakerSetupConf::sinkName(node), QString::number(positions.size()), pos);
-    text += u"        playback.props = { node.name = \"speaker_setup_out.%1\" target.object = \"%1\" node.passive = true stream.dont-remix = true "
+    text += u"        playback.props = { node.name = \"speaker_setup_out.%1\" target.object = \"%1\" node.passive = true stream.dont-remix = true node.dont-fallback = true node.linger = true "
             "audio.channels = %2 audio.position = %3 }\n"_s.arg(node, QString::number(positions.size()), pos);
     text += u"      }\n"_s;
     text += u"    }\n"_s;
@@ -321,11 +302,6 @@ double SpeakerSetupConf::angle(const QString &position, const QStringList &posit
     return 180; // RC, and LFE
 }
 
-double SpeakerSetupConf::gain(double db)
-{
-    return qPow(10.0, db / 20.0);
-}
-
 double SpeakerSetupConf::delaySeconds(double distance, double farthest)
 {
     const double d = (farthest - distance) / speedOfSound;
@@ -346,7 +322,7 @@ QString SpeakerSetupConf::validate(const QVariantMap &state)
     if (devices.size() > MAX_DEVICES) {
         return u"devices"_s;
     }
-    static const QSet<QString> deviceKeys = {u"positions"_s, u"label"_s, u"levels"_s, u"distances"_s, u"small"_s, u"crossover"_s};
+    static const QSet<QString> deviceKeys = {u"positions"_s, u"label"_s, u"distances"_s, u"small"_s, u"crossover"_s};
     for (auto it = devices.begin(); it != devices.end(); ++it) {
         if (!validNodeName(it.key())) {
             return u"device.name"_s;
@@ -372,17 +348,6 @@ QString SpeakerSetupConf::validate(const QVariantMap &state)
         }
         if (dev.contains(u"label"_s) && (dev.value(u"label"_s).typeId() != QMetaType::QString || !validLabel(dev.value(u"label"_s).toString()))) {
             return u"device.label"_s;
-        }
-        if (dev.contains(u"levels"_s)) {
-            if (dev.value(u"levels"_s).typeId() != QMetaType::QVariantMap) {
-                return u"device.levels"_s;
-            }
-            const QVariantMap levels = dev.value(u"levels"_s).toMap();
-            for (auto l = levels.begin(); l != levels.end(); ++l) {
-                if (!positions.contains(l.key()) || !isNumber(l.value()) || l.value().toDouble() < minLevel || l.value().toDouble() > maxLevel) {
-                    return u"device.levels"_s;
-                }
-            }
         }
         if (dev.contains(u"distances"_s)) {
             if (dev.value(u"distances"_s).typeId() != QMetaType::QVariantMap) {

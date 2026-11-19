@@ -172,7 +172,8 @@ QStringList SoundFormatConf::knownFormats()
 
 bool SoundFormatConf::validNodeName(const QString &name)
 {
-    static const QRegularExpression re(u"^(alsa|bluez)_(output|input)\\.[A-Za-z0-9_.:+-]{1,200}$"_s);
+    // \\z, not $: $ also matches before a final newline
+    static const QRegularExpression re(u"^(alsa|bluez)_(output|input)\\.[A-Za-z0-9_.:+-]{1,200}\\z"_s);
     return re.match(name).hasMatch();
 }
 

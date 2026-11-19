@@ -1,0 +1,23 @@
+[org.kde.plasma.pa.speakers.write]
+Name="Change the speaker setup for every account"
+Name[pl]="Zmień ustawienia głośników dla wszystkich kont"
+Name[pt_BR]="Alterar a configuração dos alto-falantes para todas as contas"
+Name[fr]="Modifier la configuration des haut-parleurs pour tous les comptes"
+Name[de]="Die Lautsprechereinrichtung für alle Konten ändern"
+Name[es]="Cambiar la configuración de los altavoces para todas las cuentas"
+Name[ja]="すべてのアカウントのスピーカー設定を変更する"
+Name[ko]="모든 계정의 스피커 설정 변경"
+Name[zh_CN]="更改所有账户的扬声器设置"
+Name[zh_TW]="變更所有帳號的喇叭設定"
+Description="Authentication is required to change the speaker setup for every account on this computer"
+Description[pl]="Zmiana ustawień głośników dla wszystkich kont na tym komputerze wymaga uwierzytelnienia"
+Description[pt_BR]="É necessária autenticação para alterar a configuração dos alto-falantes de todas as contas deste computador"
+Description[fr]="Une authentification est nécessaire pour modifier la configuration des haut-parleurs de tous les comptes de cet ordinateur"
+Description[de]="Zum Ändern der Lautsprechereinrichtung aller Konten auf diesem Computer ist eine Authentifizierung nötig"
+Description[es]="Se necesita autenticación para cambiar la configuración de los altavoces de todas las cuentas de este equipo"
+Description[ja]="このコンピュータのすべてのアカウントのスピーカー設定を変更するには認証が必要です"
+Description[ko]="이 컴퓨터의 모든 계정의 스피커 설정을 변경하려면 인증이 필요합니다"
+Description[zh_CN]="更改此计算机上所有账户的扬声器设置需要身份验证"
+Description[zh_TW]="變更這台電腦上所有帳號的喇叭設定需要驗證身分"
+Policy=auth_admin
+Persistence=session

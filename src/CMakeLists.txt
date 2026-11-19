@@ -20,6 +20,8 @@ set(plasma-volume_SRCS
     devicerenamesaver.cpp devicerenamesaver.h
     percentvalidator.cpp percentvalidator.h
     soundformatconf.cpp soundformatconf.h
+    speakersetupconf.cpp speakersetupconf.h
+    speakertestsignal.cpp speakertestsignal.h
     microphonetest.cpp microphonetest.h
 )
 
@@ -45,6 +47,7 @@ target_sources(plasma-volume-declarative PRIVATE
     qml/dbusinterface.cpp
     qml/routingcontroller.cpp qml/routingcontroller.h
     qml/soundformats.cpp qml/soundformats.h
+    qml/speakersetup.cpp qml/speakersetup.h
 )
 target_include_directories(plasma-volume-declarative PRIVATE qml/)
 

@@ -30,6 +30,20 @@ ColumnLayout {
     property bool comboBoxLabelsVisible: false
     property var routingController
     property var soundFormats
+    property var speakerSetup
+    signal speakerSetupRequested(string name)
+    readonly property var speakerInfo: {
+        if (!isPlayback || !speakerSetup) {
+            return null
+        }
+        const list = speakerSetup.devices
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i].name === pulseObject.name) {
+                return list[i]
+            }
+        }
+        return null
+    }
 
     RowLayout {
         spacing: Kirigami.Units.smallSpacing
@@ -186,6 +200,16 @@ ColumnLayout {
         text: soundFormats && soundFormats.live ? (soundFormats.live[pulseObject.name] || "") : ""
     }
 
+    Label {
+        Layout.fillWidth: true
+        Layout.leftMargin: Kirigami.Units.largeSpacing * 2
+        visible: delegate.speakerInfo !== null && !delegate.speakerInfo.eligible
+        wrapMode: Text.Wrap
+        font: Kirigami.Theme.smallFont
+        opacity: 0.7
+        text: delegate.speakerInfo !== null ? delegate.speakerInfo.reason : ""
+    }
+
     RowLayout {
         spacing: Kirigami.Units.smallSpacing
 
@@ -281,6 +305,15 @@ ColumnLayout {
                     return volume !== ChannelVolumes[0];
                 });
             }
+        }
+
+        Button {
+            Layout.alignment: Qt.AlignTop
+            visible: delegate.speakerInfo !== null
+            enabled: delegate.speakerInfo !== null && delegate.speakerInfo.eligible
+            text: i18nd("kcm_pulseaudio", "Speaker Setup…")
+            icon.name: "audio-speakers-symbolic"
+            onClicked: delegate.speakerSetupRequested(delegate.pulseObject.name)
         }
     }
 

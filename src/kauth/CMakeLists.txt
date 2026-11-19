@@ -4,3 +4,10 @@ target_link_libraries(plasma-pa-soundformats-helper PRIVATE Qt::Core KF6::AuthCo
 install(TARGETS plasma-pa-soundformats-helper DESTINATION ${KAUTH_HELPER_INSTALL_DIR})
 kauth_install_helper_files(plasma-pa-soundformats-helper org.kde.plasma.pa.soundformats root)
 kauth_install_actions(org.kde.plasma.pa.soundformats org.kde.plasma.pa.soundformats.actions)
+
+add_executable(plasma-pa-speakers-helper speakershelper.cpp ../speakersetupconf.cpp)
+target_include_directories(plasma-pa-speakers-helper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(plasma-pa-speakers-helper PRIVATE Qt::Core KF6::AuthCore)
+install(TARGETS plasma-pa-speakers-helper DESTINATION ${KAUTH_HELPER_INSTALL_DIR})
+kauth_install_helper_files(plasma-pa-speakers-helper org.kde.plasma.pa.speakers root)
+kauth_install_actions(org.kde.plasma.pa.speakers org.kde.plasma.pa.speakers.actions)

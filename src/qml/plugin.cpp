@@ -36,6 +36,7 @@
 #include "microphonetest.h"
 #include "routingcontroller.h"
 #include "soundformats.h"
+#include "speakersetup.h"
 
 static QJSValue pulseaudio_singleton(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
@@ -79,6 +80,7 @@ void Plugin::registerTypes(const char *uri)
     qmlRegisterType<MicrophoneTest>(uri, 0, 1, "MicrophoneTest");
     qmlRegisterType<RoutingController>(uri, 0, 1, "RoutingController");
     qmlRegisterType<SoundFormats>(uri, 0, 1, "SoundFormats");
+    qmlRegisterType<SpeakerSetup>(uri, 0, 1, "SpeakerSetup");
     qmlRegisterType<GlobalConfig>(uri, 0, 1, "GlobalConfig");
     qmlRegisterType<DeviceRenameModel>(uri, 0, 1, "DeviceRenameModel");
     qmlRegisterType<DeviceRenameSaver>(uri, 0, 1, "DeviceRenameSaver");

@@ -19,3 +19,17 @@ ecm_add_test(
     LINK_LIBRARIES Qt6::Test Qt6::Core
 )
 target_include_directories(soundformatconftest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
+ecm_add_test(
+    speakersetupconftest.cpp ../src/speakersetupconf.cpp
+    TEST_NAME speakersetupconftest
+    LINK_LIBRARIES Qt6::Test Qt6::Core
+)
+target_include_directories(speakersetupconftest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
+ecm_add_test(
+    speakertestsignaltest.cpp ../src/speakertestsignal.cpp
+    TEST_NAME speakertestsignaltest
+    LINK_LIBRARIES Qt6::Test Qt6::Core
+)
+target_include_directories(speakertestsignaltest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)

@@ -72,11 +72,18 @@ KCM.ScrollViewKCM {
         id: soundFormats
     }
 
+    SpeakerSetup {
+        id: speakerSetupModel
+    }
+
     Timer {
         interval: 3000
         running: soundFormats && Window.window !== null
         repeat: true
-        onTriggered: soundFormats.refresh()
+        onTriggered: {
+            soundFormats.refresh()
+            speakerSetupModel.refresh()
+        }
     }
 
     actions: [
@@ -186,7 +193,9 @@ KCM.ScrollViewKCM {
                     isPlayback: true
                     routingController: routing
                     soundFormats: soundFormats
+                    speakerSetup: speakerSetupModel
                     comboBoxLabelsVisible: column.comboBoxLabelsVisible
+                    onSpeakerSetupRequested: name => kcm.push("SpeakerSetup.qml", { "deviceName": name })
                 }
             }
 

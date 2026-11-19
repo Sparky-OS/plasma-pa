@@ -5,6 +5,7 @@
 
 #include <QFile>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
 #include <QTemporaryDir>
@@ -344,6 +345,32 @@ private Q_SLOTS:
         QVERIFY(error.startsWith(u"foreign: "_s));
         QVERIFY(SpeakerSetupConf::write(dir.path(), QVariantMap{}));
         QCOMPARE(fileText(dir.path()), QByteArray("# somebody else's file\n"));
+    }
+
+    void whatTheHelperReadsIsTheSameState_data()
+    {
+        QTest::addColumn<QByteArray>("json");
+        QTest::addColumn<QString>("code");
+        const QByteArray head = "{\"devices\":{\"alsa_output.x\":{\"positions\":[\"FL\",\"FR\",\"FC\",\"LFE\",\"RL\",\"RR\"],";
+        QTest::newRow("numbers as JSON doubles") << head + "\"levels\":{\"FL\":-3.5},\"small\":[\"FL\"],\"crossover\":80.0}}}" << QString();
+        QTest::newRow("a quote in a label escaped in JSON") << head + "\"label\":\"a\\\"b\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
+        QTest::newRow("a newline in a label escaped in JSON") << head + "\"label\":\"a\\nb\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
+        QTest::newRow("a final newline in a node name escaped in JSON")
+            << QByteArray("{\"devices\":{\"alsa_output.x\\n\":{\"positions\":[\"FL\",\"FR\",\"FC\"],\"levels\":{\"FL\":-3}}}}") << u"device.name"_s;
+        QTest::newRow("a unicode escape of a quote") << head + "\"label\":\"a\\u0022b\",\"levels\":{\"FL\":-3}}}}" << u"device.label"_s;
+        QTest::newRow("a level as a string") << head + "\"levels\":{\"FL\":\"-3\"}}}}" << u"device.levels"_s;
+        QTest::newRow("a level out of range") << head + "\"levels\":{\"FL\":1e300}}}}" << u"device.levels"_s;
+        QTest::newRow("a crossover with a fraction") << head + "\"small\":[\"FL\"],\"crossover\":80.5}}}" << u"device.crossover"_s;
+        QTest::newRow("an extra top level key") << QByteArray("{\"devices\":{},\"path\":\"/etc/shadow\"}") << u"state.key"_s;
+    }
+    void whatTheHelperReadsIsTheSameState()
+    {
+        QFETCH(QByteArray, json);
+        QFETCH(QString, code);
+        QJsonParseError parse;
+        const auto doc = QJsonDocument::fromJson(json, &parse);
+        QCOMPARE(parse.error, QJsonParseError::NoError);
+        QCOMPARE(SpeakerSetupConf::validate(doc.object().toVariantMap()), code);
     }
 
     void theAnglesAreTheStandards()

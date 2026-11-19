@@ -259,8 +259,9 @@ bool SpeakerSetupConf::validNodeName(const QString &name)
 
 bool SpeakerSetupConf::validLabel(const QString &label)
 {
-    // Letters and digits of any script, a space and a few marks; no quote, backslash, brace, bracket, hash or control character.
-    static const QRegularExpression re(u"^[\\p{L}\\p{N}][\\p{L}\\p{N} ._+:()/-]{0,79}\\z"_s);
+    // Letters and digits of any script, combining marks, spaces, and the marks . _ + : ( ) / - and the fullwidth colon and
+    // parentheses CJK translations use; no quote, backslash, brace, bracket, hash, comma, equals sign or control character.
+    static const QRegularExpression re(u"^[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M}\\p{Zs}._+:()/\\x{FF1A}\\x{FF08}\\x{FF09}-]{0,79}\\z"_s);
     return re.match(label).hasMatch();
 }
 

@@ -37,7 +37,10 @@ KCM.ScrollViewKCM {
     readonly property bool eligible: info !== null && info.eligible
     readonly property bool hasSub: positions.indexOf("LFE") >= 0
     readonly property var scopeState: allAccounts ? setup.systemState : setup.userState
-    readonly property var savedDevice: setup.deviceState(allAccounts, deviceName)
+    readonly property var savedDevice: {
+        const devs = scopeState.devices
+        return devs !== undefined && devs[deviceName] !== undefined ? devs[deviceName] : ({})
+    }
     readonly property var groups: {
         const g = []
         const pairs = [
@@ -204,9 +207,12 @@ KCM.ScrollViewKCM {
         if (!any) {
             return null
         }
-        const text = info.description.replace(/[^\p{L}\p{N} ._+:()\/-]/gu, "").trim().substring(0, 56)
+        // The label becomes the setup's name in the lists of devices; only characters the drop-in accepts go into it.
+        const allowed = "\\p{L}\\p{N}\\p{M}\\p{Zs}._+:()\\/\\uFF1A\\uFF08\\uFF09\\-"
+        const text = info.description.replace(new RegExp("[^" + allowed + "]", "gu"), "").trim().substring(0, 56)
         if (/^[\p{L}\p{N}]/u.test(text)) {
-            d.label = i18nd("kcm_pulseaudio", "Speaker Setup: %1", text).substring(0, 80)
+            const translated = i18nd("kcm_pulseaudio", "Speaker Setup: %1", text)
+            d.label = new RegExp("^[\\p{L}\\p{N}][" + allowed + "]{0,79}$", "u").test(translated) ? translated : "Speaker Setup: " + text
         }
         return d
     }
@@ -390,8 +396,9 @@ KCM.ScrollViewKCM {
                             spacing: 0
                             Label {
                                 Layout.alignment: Qt.AlignHCenter
-                                text: page.speakerName(spk.modelData)
-                                font: Kirigami.Theme.smallFont
+                                text: spk.modelData
+                                font.bold: true
+                                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                                 color: setup.testing === spk.modelData ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
                             }
                             Label {
@@ -404,9 +411,14 @@ KCM.ScrollViewKCM {
                         }
 
                         MouseArea {
+                            id: spkArea
                             anchors.fill: parent
+                            hoverEnabled: true
                             onClicked: page.selected = spk.modelData
                         }
+
+                        ToolTip.visible: spkArea.containsMouse
+                        ToolTip.text: page.speakerName(spk.modelData)
                     }
                 }
             }
@@ -473,6 +485,7 @@ KCM.ScrollViewKCM {
 
                 ComboBox {
                     Kirigami.FormData.label: i18nd("kcm_pulseaudio", "Test signal length:")
+                    Layout.minimumWidth: Kirigami.Units.gridUnit * 14
                     readonly property var values: [1, 2, 5, 10]
                     model: values.map(v => i18nd("kcm_pulseaudio", "%1 s per speaker", v))
                     currentIndex: Math.max(0, values.indexOf(setup.testSeconds))

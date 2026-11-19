@@ -109,7 +109,7 @@ private Q_SLOTS:
         QTest::newRow("a lower case position") << withDevice(NODE, QVariantMap{{u"positions"_s, QVariantList{u"fl"_s, u"FR"_s, u"FC"_s}}, {u"levels"_s, QVariantMap{{u"FR"_s, -3}}}})
                                                << u"device.positions"_s;
 
-        for (const QString &bad : {u"a\"b"_s, u"a\nb"_s, u"a\n"_s, u"a\\b"_s, u"a{b"_s, u"a}b"_s, u"a[b"_s, u"a]b"_s, u"a#b"_s, u"a=b"_s, u"a,b"_s, u"a\tb"_s, u"a\rb"_s,
+        for (const QString &bad : {u"a\u2028b"_s, u"a\u0085b"_s, u"a\u200b" "b"_s, u"a\u00a0\u2029"_s, u"a\uff02b"_s, u"a\uff3cb"_s, u"a\"b"_s, u"a\nb"_s, u"a\n"_s, u"a\\b"_s, u"a{b"_s, u"a}b"_s, u"a[b"_s, u"a]b"_s, u"a#b"_s, u"a=b"_s, u"a,b"_s, u"a\tb"_s, u"a\rb"_s,
                                    u" a"_s, u""_s, u"a;b"_s, u"a$b"_s, u"a`b"_s, u"a<b"_s}) {
             QTest::newRow(qPrintable(u"label "_s + QString::fromLatin1(QByteArray(bad.toUtf8()).toPercentEncoding()))) << withDevice(NODE, dev({{u"label"_s, bad}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}))
                                                                                                                         << u"device.label"_s;
@@ -198,6 +198,9 @@ private Q_SLOTS:
                                                                        }()}}));
         QTest::newRow("small speakers and the crossover") << withDevice(NODE, dev({{u"small"_s, QVariantList{u"FL"_s, u"FR"_s, u"FC"_s}}, {u"crossover"_s, 120}}));
         QTest::newRow("a label with letters of another script") << withDevice(NODE, dev({{u"label"_s, u"Alto-falantes (áudio 5.1) 標準"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+        QTest::newRow("a label with the fullwidth colon of a Chinese translation") << withDevice(NODE, dev({{u"label"_s, u"\u626c\u58f0\u5668\u8bbe\u7f6e\uff1arig 71"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+        QTest::newRow("a label with fullwidth parentheses and an ideographic space") << withDevice(NODE, dev({{u"label"_s, u"\u30b9\u30d4\u30fc\u30ab\u30fc\uff08rig\u3000\u0035\uff09"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
+        QTest::newRow("a label with a combining mark") << withDevice(NODE, dev({{u"label"_s, u"Cafe\u0301 audio"_s}, {u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
         QTest::newRow("a real bluez name") << withDevice(u"bluez_output.AA_BB_CC_DD_EE_FF.1"_s, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
         QTest::newRow("a usb name with plus and colon") << withDevice(u"alsa_output.usb-Rig_DAC+Dock-00.analog-surround-71:1"_s, dev({{u"levels"_s, QVariantMap{{u"FL"_s, -3}}}}));
     }

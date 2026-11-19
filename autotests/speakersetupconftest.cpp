@@ -376,6 +376,32 @@ private Q_SLOTS:
         QCOMPARE(SpeakerSetupConf::validate(doc.object().toVariantMap()), code);
     }
 
+    void aLabelIsSanitisedToWhatIsAccepted_data()
+    {
+        QTest::addColumn<QString>("text");
+        QTest::addColumn<QString>("want");
+        QTest::newRow("plain") << u"Built-in Audio Analog Surround 5.1"_s << u"Built-in Audio Analog Surround 5.1"_s;
+        QTest::newRow("quotes and braces go") << u"Dock \"A\" {x} [y] #z =1, \\"_s << u"Dock A x y z 1"_s;
+        QTest::newRow("a newline and a tab go") << u"Dock\nA\tB"_s << u"DockAB"_s;
+        QTest::newRow("line separators and format characters go") << u"A\u2028B\u2029C\u200bD\u0085E"_s << u"ABCDE"_s;
+        QTest::newRow("CJK stays") << u"\u30b9\u30d4\u30fc\u30ab\u30fc 5.1"_s << u"\u30b9\u30d4\u30fc\u30ab\u30fc 5.1"_s;
+        QTest::newRow("cut to the limit") << QString(100, u'a') << QString(56, u'a');
+        QTest::newRow("trimmed") << u"  Dock  "_s << u"Dock"_s;
+        QTest::newRow("starts with a mark, so nothing usable") << u"(Dock)"_s << QString();
+        QTest::newRow("nothing left") << u"\"\"{}"_s << QString();
+        QTest::newRow("an emoji goes") << u"Dock \U0001F50A 5.1"_s << u"Dock  5.1"_s;
+    }
+    void aLabelIsSanitisedToWhatIsAccepted()
+    {
+        QFETCH(QString, text);
+        QFETCH(QString, want);
+        const QString got = SpeakerSetupConf::sanitiseLabel(text, 56);
+        QCOMPARE(got, want);
+        if (!got.isEmpty()) {
+            QVERIFY(SpeakerSetupConf::validLabel(got));
+        }
+    }
+
     void theAnglesAreTheStandards()
     {
         const QStringList p51 = {u"FL"_s, u"FR"_s, u"FC"_s, u"LFE"_s, u"RL"_s, u"RR"_s};

@@ -43,6 +43,8 @@ public:
 
     static bool validNodeName(const QString &name);
     static bool validLabel(const QString &label);
+    /** The text with every character a label does not accept removed, trimmed and cut to maxCharacters; empty when it does not start with a letter or digit. */
+    static QString sanitiseLabel(const QString &text, int maxCharacters);
     static bool validPosition(const QString &position);
     static QStringList knownPositions();
 

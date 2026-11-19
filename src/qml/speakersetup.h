@@ -73,6 +73,10 @@ public:
     Q_INVOKABLE double angle(const QString &position, const QStringList &positions) const;
     /** The delay in seconds a speaker at distance (metres) gets when the farthest speaker is at farthest. */
     Q_INVOKABLE double delaySeconds(double distance, double farthest) const;
+    /** A device's description cut to what a setup's name may hold; empty when nothing usable is left. */
+    Q_INVOKABLE QString sanitiseLabel(const QString &description) const;
+    /** Whether a label is one the drop-in accepts. */
+    Q_INVOKABLE bool validLabel(const QString &label) const;
     /** The setup, for this account or every account, as the person set it for one device. */
     Q_INVOKABLE QVariantMap deviceState(bool system, const QString &node) const;
     /**

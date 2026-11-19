@@ -265,6 +265,25 @@ bool SpeakerSetupConf::validLabel(const QString &label)
     return re.match(label).hasMatch();
 }
 
+QString SpeakerSetupConf::sanitiseLabel(const QString &text, int maxCharacters)
+{
+    static const QRegularExpression keep(u"^[\\p{L}\\p{N}\\p{M}\\p{Zs}._+:()/\\x{FF1A}\\x{FF08}\\x{FF09}-]$"_s);
+    QString out;
+    int count = 0;
+    for (const char32_t c : text.toUcs4()) {
+        if (count >= maxCharacters) {
+            break;
+        }
+        const QString one = QString::fromUcs4(&c, 1);
+        if (keep.match(one).hasMatch()) {
+            out += one;
+            ++count;
+        }
+    }
+    out = out.trimmed();
+    return validLabel(out) ? out : QString();
+}
+
 QString SpeakerSetupConf::sinkName(const QString &nodeName)
 {
     return u"speaker_setup."_s + nodeName;

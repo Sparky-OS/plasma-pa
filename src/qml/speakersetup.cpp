@@ -159,6 +159,16 @@ double SpeakerSetup::delaySeconds(double distance, double farthest) const
     return SpeakerSetupConf::delaySeconds(distance, farthest);
 }
 
+QString SpeakerSetup::sanitiseLabel(const QString &description) const
+{
+    return SpeakerSetupConf::sanitiseLabel(description, 56);
+}
+
+bool SpeakerSetup::validLabel(const QString &label) const
+{
+    return SpeakerSetupConf::validLabel(label);
+}
+
 void SpeakerSetup::loadSettings()
 {
     const KConfigGroup g(KSharedConfig::openConfig(u"kcm_pulseaudiorc"_s), u"SpeakerSetup"_s);

@@ -208,11 +208,10 @@ KCM.ScrollViewKCM {
             return null
         }
         // The label becomes the setup's name in the lists of devices; only characters the drop-in accepts go into it.
-        const allowed = "\\p{L}\\p{N}\\p{M}\\p{Zs}._+:()\\/\\uFF1A\\uFF08\\uFF09\\-"
-        const text = info.description.replace(new RegExp("[^" + allowed + "]", "gu"), "").trim().substring(0, 56)
-        if (/^[\p{L}\p{N}]/u.test(text)) {
+        const text = setup.sanitiseLabel(info.description)
+        if (text !== "") {
             const translated = i18nd("kcm_pulseaudio", "Speaker Setup: %1", text)
-            d.label = new RegExp("^[\\p{L}\\p{N}][" + allowed + "]{0,79}$", "u").test(translated) ? translated : "Speaker Setup: " + text
+            d.label = setup.validLabel(translated) ? translated : "Speaker Setup: " + text
         }
         return d
     }
@@ -380,7 +379,7 @@ KCM.ScrollViewKCM {
                             }
                             return base * Math.max(0.25, page.distanceOf(modelData) / room.farMax)
                         }
-                        width: Kirigami.Units.gridUnit * 4
+                        width: Kirigami.Units.gridUnit * 3.2
                         height: Kirigami.Units.gridUnit * 2.4
                         x: (isSub ? room.width - width - Kirigami.Units.smallSpacing : room.cx + orbit * Math.sin(angle)) - (isSub ? 0 : width / 2)
                         y: (isSub ? room.height - height - Kirigami.Units.smallSpacing : room.cy - orbit * Math.cos(angle)) - (isSub ? 0 : height / 2)
